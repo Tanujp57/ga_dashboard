@@ -1,0 +1,87 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Georgia Election Dashboard</title>
+<script src="plotly.min.js"></script><script src="data.js"></script>
+<style>body{font-family:system-ui,sans-serif;margin:0;background:#f4f5f7;color:#1f2a44}
+header{display:flex;align-items:center;gap:24px;padding:12px 24px;background:#1f2a44;color:#fff}
+h1{margin:0;font-size:22px;flex:1}
+nav button{border:0;padding:8px 16px;margin-left:6px;border-radius:6px;background:#3b4a6b;color:#fff;cursor:pointer;font-size:15px}
+nav button.on{background:#fff;color:#1f2a44;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;padding:16px}
+.card{background:#fff;border-radius:8px;padding:8px;box-shadow:0 1px 4px #0002;position:relative}
+.mapctl{padding:6px 10px;font-size:14px}.slider{display:flex;align-items:center;gap:10px;padding:4px 12px 10px}.slider input{flex:1}.slider button{width:34px;height:30px;border:0;border-radius:6px;background:#1f2a44;color:#fff;cursor:pointer}
+
+@media(max-width:900px){.grid{grid-template-columns:1fr}.wide{grid-column:1}header{flex-wrap:wrap}}
+small{display:block;padding:4px 24px 16px;color:#666}</style></head><body>
+<header><h1>Georgia Elections Dashboard</h1>
+<nav id="tabs"><button data-o="president" class="on">President</button><button data-o="governor">Governor</button><button data-o="senate">U.S. Senate</button></nav></header>
+<div class="grid">
+<div class="card"><div class="mapctl"><label>Map shows <select id="metric"></select></label></div>
+<div id="map" style="height:470px"></div>
+<div class="slider"><button id="play" title="Play">▶</button><input type="range" id="yr" step="1"><b id="yrlab" style="min-width:60px"></b></div></div>
+<div class="card"><div id="share" style="height:540px"></div></div>
+<div class="card"><div id="margin" style="height:380px"></div></div>
+<div class="card"><div class="mapctl"><label>County compare vs <select id="xmetric"></select></label></div><div id="scatter" style="height:380px"></div></div>
+</div>
+<small id="note"></small>
+<script>
+const BLUE='#2b6cb0',RED='#c53030',GRAY='#718096';
+const TITLES={president:'Presidential',governor:'Gubernatorial',senate:'U.S. Senate'};
+const NOTES={president:'Statewide: MIT Election Data + Science Lab (1976–2020), Wikipedia (1960–72, 2024 from county sums). County results: Wikipedia (1960–2004), tonmcg/GitHub (2008–2024). Demographics: Census Bureau population estimates (2000, 2010, 2019). 1968: Wallace won Georgia and counts as "Other".',
+governor:'Gubernatorial results from Wikipedia. Years with Democratic-primary-only or uncontested general elections (1962) are omitted.',
+senate:'Senate results 2004–2021: MIT Election Data + Science Lab; earlier: Wikipedia. Uncontested races and a few years with incomplete data (e.g. 1972, 1992) are omitted. 2020 Special is a multi-candidate jungle race – D/R are party totals.'};
+function trend(o){
+ const d=GA[o],x=d.map(r=>r.label);
+ Plotly.react('share',[
+  {x,y:d.map(r=>r.D),name:'Democratic',mode:'lines+markers',line:{color:BLUE},text:d.map(r=>r.dname),hovertemplate:'%{x} %{text}: %{y}%<extra></extra>'},
+  {x,y:d.map(r=>r.R),name:'Republican',mode:'lines+markers',line:{color:RED},text:d.map(r=>r.rname),hovertemplate:'%{x} %{text}: %{y}%<extra></extra>'},
+  {x,y:d.map(r=>r.O),name:'Other',mode:'lines+markers',line:{color:GRAY},hovertemplate:'%{x}: %{y}%<extra></extra>'}],
+  {title:TITLES[o]+' vote share in Georgia',yaxis:{title:'% of vote',range:[0,100]},xaxis:{type:'category'},legend:{orientation:'h',y:-.15}},{responsive:true});
+ const mg=d.map(r=>+(r.D-r.R).toFixed(1));
+ Plotly.react('margin',[{type:'bar',x,y:mg,marker:{color:mg.map(m=>m>=0?BLUE:RED)},
+  text:d.map(r=>r.dname+' vs '+r.rname),hovertemplate:'%{x}: %{text}<br>Margin (D−R): %{y} pts<extra></extra>'}],
+  {title:'Margin (Democratic − Republican, points)',xaxis:{type:'category'},yaxis:{title:'points'}},{responsive:true});
+ document.getElementById('note').textContent=NOTES[o];
+}
+let geo;
+const YEARS=Object.keys(GA.county).map(Number),SNAPS=Object.keys(GA.demo).map(Number);
+const METRICS={margin:{n:'Presidential margin (D−R)'},white:{n:'% White (non-Hispanic)',i:1},black:{n:'% Black (non-Hispanic)',i:2},
+ hisp:{n:'% Hispanic',i:3},asian:{n:'% Asian (non-Hispanic)',i:4},old:{n:'% Age 65+',i:5},pop:{n:'Population',i:0}};
+const snap=y=>SNAPS.reduce((a,b)=>Math.abs(b-y)<Math.abs(a-y)?b:a);
+const sel=(id,keys)=>{const e=document.getElementById(id);keys.forEach(k=>e.add(new Option(METRICS[k].n,k)))};
+sel('metric',Object.keys(METRICS));sel('xmetric',Object.keys(METRICS).filter(k=>k!='margin'));document.getElementById('xmetric').value='black';
+const yr=document.getElementById('yr');yr.min=0;yr.max=YEARS.length-1;yr.value=YEARS.length-1;
+const curYear=()=>YEARS[+yr.value];
+const marg=(c,i)=>+(100*(c[i][0]-c[i][1])/c[i][2]).toFixed(1);
+function map(){
+ if(!geo)return;
+ const y=curYear(),c=GA.county[y],m=document.getElementById('metric').value,M=METRICS[m],ids=geo.features.map(f=>f.id);
+ document.getElementById('yrlab').textContent=y+(y<SNAPS[0]?' · demographics use 2000 (earliest)':'');
+ const dm=GA.demo[snap(y)];
+ const z=m=='margin'?ids.map(i=>marg(c,i)):ids.map(i=>dm[i][M.i]);
+ const names=geo.features.map(f=>f.properties.NAME+' County');
+ const txt=ids.map((i,k)=>names[k]+'<br>Dem '+c[i][0].toLocaleString()+' · Rep '+c[i][1].toLocaleString()+'<br>Pop '+dm[i][0].toLocaleString()+' · Black '+dm[i][2]+'% · Hispanic '+dm[i][3]+'%');
+ const isM=m=='margin';
+ Plotly.react('map',[{type:'choropleth',geojson:geo,locations:ids,z,text:txt,
+  ...(isM?{zmin:-80,zmax:80,colorscale:[[0,'#9b1c1c'],[.5,'#f7f7f7'],[1,'#1e4e8c']]}:{colorscale:m=='pop'?'Viridis':'YlGnBu',...(m=='pop'?{zmin:0,zmax:200000}:{})}),
+  colorbar:{title:isM?'D−R pts':'',thickness:12},hovertemplate:'%{text}<br>'+(isM?'Margin: %{z} pts':M.n+': %{z}')+'<extra></extra>',marker:{line:{color:'#555',width:.4}}}],
+  {title:{text:(isM?y+' presidential margin by county':M.n+' ('+snap(y)+' data)'),font:{size:15}},margin:{t:40,b:0,l:0,r:0},geo:{fitbounds:'locations',visible:false}},{responsive:true});
+ scatter();
+}
+function scatter(){
+ const y=curYear(),c=GA.county[y],xm=document.getElementById('xmetric').value,X=METRICS[xm],dm=GA.demo[snap(y)],ids=Object.keys(c);
+ Plotly.react('scatter',[{type:'scatter',mode:'markers',x:ids.map(i=>dm[i][X.i]),y:ids.map(i=>marg(c,i)),
+  text:ids.map(i=>geo.features.find(f=>f.id==i).properties.NAME+' County'),
+  marker:{size:ids.map(i=>Math.max(5,Math.sqrt(c[i][2])/9)),color:ids.map(i=>marg(c,i)),cmin:-80,cmax:80,colorscale:[[0,'#9b1c1c'],[.5,'#f7f7f7'],[1,'#1e4e8c']],line:{color:'#555',width:.5},opacity:.85},
+  hovertemplate:'%{text}<br>'+X.n+': %{x}<br>Margin: %{y} pts<extra></extra>'}],
+  {title:{text:y+' margin vs '+X.n+' ('+snap(y)+')',font:{size:14}},xaxis:{title:X.n,...(xm=='pop'?{type:'log'}:{})},yaxis:{title:'Margin (D−R, pts)',zeroline:true},showlegend:false},{responsive:true});
+}
+let timer=null;
+document.getElementById('play').onclick=function(){
+ if(timer){clearInterval(timer);timer=null;this.textContent='▶';return}
+ this.textContent='❚❚';if(+yr.value==YEARS.length-1)yr.value=0,map();
+ timer=setInterval(()=>{if(+yr.value>=YEARS.length-1){clearInterval(timer);timer=null;document.getElementById('play').textContent='▶';return}yr.value=+yr.value+1;map()},1100)};
+yr.oninput=map;document.getElementById('metric').onchange=map;document.getElementById('xmetric').onchange=scatter;
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));trend(b.dataset.o)});
+trend('president');
+fetch('georgia_counties.geojson').then(r=>r.json()).then(g=>{geo=g;map()});
+</script></body></html>
