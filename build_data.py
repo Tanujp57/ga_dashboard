@@ -41,7 +41,7 @@ def from_wiki(kind, yrs):
 out = {"president": [], "governor": [], "senate": [], "county": {}}
 
 # President
-out["president"] += from_wiki("pres", range(1960, 1976, 4))
+out["president"] += from_wiki("pres", range(1952, 1976, 4))
 p = pd.read_csv("data/1976-2020-president.csv"); p = p[p.state_po == "GA"]
 for y, g in p.groupby("year"):
     tot = g.totalvotes.iloc[0]
@@ -113,7 +113,7 @@ for y, yc in ((2012, 5), (2016, 9)):
 
 # National popular vote (for "Georgia vs. the nation"); 1976-2020 summed from MEDSL state rows, 2024 from county file,
 # 1960-1972 from Wikipedia infoboxes (D, R, total votes)
-nat = {1960: (34220984, 34108157, 68838219), 1964: (43129040, 27175754, 70639284),
+nat = {1952: (27375090, 34075529, 61751942), 1956: (26028028, 35579180, 62021328), 1960: (34220984, 34108157, 68838219), 1964: (43129040, 27175754, 70639284),
        1968: (31271839, 31783783, 73199998), 1972: (29173222, 47168711, 77744027)}
 for y, g in pd.read_csv("data/1976-2020-president.csv").groupby("year"):
     nat[int(y)] = (int(g[g.party == "DEMOCRAT"].candidatevotes.sum()), int(g[g.party == "REPUBLICAN"].candidatevotes.sum()),

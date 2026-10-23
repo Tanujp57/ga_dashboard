@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Georgia Election Dashboard</title>
+<title>Investigating Georgia’s Historical Partisan Trend</title>
 <script src="plotly.min.js"></script><script src="data.js"></script>
 <script src="georgia_counties.js"></script>
 <style>
@@ -13,7 +13,9 @@ h2.sec{margin:0;padding:24px 24px 0;font-size:22px}
 .lead{padding:4px 24px 0;color:#555;max-width:900px}
 /* scrollytelling */
 .hero{padding:70px 24px 40px;text-align:center;background:linear-gradient(#1f2a44,#2d3b61);color:#fff}
-.hero h2{font-size:38px;margin:0 0 10px}.hero p{max-width:640px;margin:0 auto;color:#cbd5e0;font-size:18px}
+.hero h2{font-size:38px;margin:0 0 10px}.insights{display:flex;gap:16px;max-width:1100px;margin:28px auto 0;text-align:left;flex-wrap:wrap}.insights a{flex:1 1 280px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:14px 16px;color:#fff;text-decoration:none;display:flex;flex-direction:column;gap:6px}.insights a:hover{background:rgba(255,255,255,.18)}.insights b{color:#f6ad55;font-size:12px;text-transform:uppercase;letter-spacing:.06em}.insights span{font-size:16px;font-weight:600}.insights small{color:#cbd5e0;font-size:13px}
+.step{scroll-margin-top:30vh}
+.hero p{max-width:640px;margin:0 auto;color:#cbd5e0;font-size:18px}
 .story{display:grid;grid-template-columns:1.25fr 1fr;gap:24px;padding:0 24px;background:#fff}
 .sticky{position:sticky;top:52px;height:calc(100vh - 52px);display:flex;flex-direction:column;padding:12px 0}
 .sticky .view{flex:1;min-height:0;position:relative}
@@ -41,9 +43,9 @@ small{display:block;padding:4px 24px 20px;color:#666}
 @media(max-width:900px){.grid{grid-template-columns:1fr}.span2{grid-column:1}header nav{display:none}
 .story{grid-template-columns:1fr;padding:0 12px}.sticky{height:50vh;z-index:5;background:#fff;top:46px}.step{min-height:60vh}}
 </style></head><body>
-<header><h1>Georgia Elections Dashboard</h1><nav><a href="#story">Story</a><a href="#explore">Explore</a><a href="#compare">Senate vs. Governor</a></nav></header>
+<header><h1>Investigating Georgia’s Historical Partisan Trend</h1><nav><a href="#story">Story</a><a href="#explore">Explore</a><a href="#compare">Senate vs. Governor</a></nav></header>
 
-<div class="hero"><h2>How Georgia turned purple</h2><p>A once reliably Democratic state, a long Republican lean, and the question of what changed. Scroll to follow the story.</p></div>
+<div class="hero"><h2>Investigating Georgia’s Historical Partisan Trend</h2><p>A once reliably Democratic state, a long Republican lean, and the question of what changed. Scroll to follow the story.</p><div class="insights"><a href="#step-1"><b>Insight 1</b><span>Georgia’s Partisan Flip Happened in 1964</span><small>Goldwater won 54.1% in 1964, after Kennedy’s 62.5% in 1960 and Stevenson’s 66.5% in 1956.</small></a><a href="#compare"><b>Insight 2</b><span>Georgia doesn’t vote that differently between federal and state-level elections (except Jimmy Carter)</span><small>Senate and governor went to the same party in 6 of the 8 years both were on the ballot.</small></a><a href="#step-10"><b>Insight 3</b><span>Georgia’s recent leftward trend is concentrated in the Atlanta suburbs</span><small>Gwinnett went from R+31.6 in 2000 to D+18.3 in 2020.</small></a></div></div>
 <section id="story" class="story">
  <div class="sticky">
   <div id="acttag"></div>
@@ -82,7 +84,7 @@ small{display:block;padding:4px 24px 20px;color:#666}
 const BLUE='#2b6cb0',RED='#c53030',GRAY='#718096';
 const DIV=[[0,'#9b1c1c'],[.5,'#f7f7f7'],[1,'#1e4e8c']];
 const TITLES={president:'Presidential',governor:'Gubernatorial',senate:'U.S. Senate'};
-const NOTES={president:'Statewide: MIT Election Data + Science Lab (1976–2020), Wikipedia (1960–72; 2024 summed from counties). County results: Wikipedia (1960–2004), tonmcg/GitHub (2008–2024). Demographics: Census Bureau July-1 population estimates, shown only for years the Census files cover (2000–2016). 1968: Wallace won Georgia and counts as "Other".',
+const NOTES={president:'Statewide: MIT Election Data + Science Lab (1976–2020), Wikipedia (1952–72; 2024 summed from counties). County results: Wikipedia (1952–2004), tonmcg/GitHub (2008–2024). Demographics: Census Bureau July-1 population estimates, shown only for years the Census files cover (2000–2016). 1968: Wallace won Georgia and counts as "Other".',
 governor:'Gubernatorial results from Wikipedia. Years with Democratic-primary-only or uncontested general elections (1962) are omitted.',
 senate:'Senate results 2004–2021: MIT Election Data + Science Lab; 2022 and earlier years: Wikipedia. Uncontested races and a few years with incomplete data (e.g. 1972, 1992) are omitted. 2020 Special is a multi-candidate jungle race – D/R are party totals.'};
 const P=y=>GA.president.find(r=>r.year==y);
@@ -255,7 +257,8 @@ function shiftMap(){
 const ACTS={1:['ACT 1 · A Democratic state','#2b6cb0'],2:['ACT 2 · The long Republican lean','#c53030'],3:['ACT 3 · What changed?','#1f2a44']};
 const cnt=(y)=>dWins(y);
 const STEPS=[
- {act:1,view:'map',y:1960,m:'margin',t:'A Democratic state',h:()=>`In 1960 Georgia gave <span class="b">${P(1960).dname} ${pc(P(1960),'D')}</span> to ${P(1960).rname}'s ${pc(P(1960),'R')}. Democrats carried <b>${cnt(1960)} of 159 counties</b>. For generations, winning the Democratic primary was winning the election.`},
+ {act:1,view:'map',y:1956,m:'margin',t:'A Democratic state',h:()=>`In 1956 Georgia gave <span class="b">${P(1956).dname} ${pc(P(1956),'D')}</span> to ${P(1956).rname}'s ${pc(P(1956),'R')}, and Democrats carried <b>${cnt(1956)} of 159 counties</b>. In 1960 Kennedy still won ${pc(P(1960),'D')}. For generations, winning the Democratic primary was winning the election.`},
+ {act:1,view:'map',y:1964,m:'margin',t:'1964: the flip',h:()=>`Four years after Kennedy's ${pc(P(1960),'D')}, Georgia voted <span class="r">${P(1964).rname} ${pc(P(1964),'R')}</span> over ${P(1964).dname}'s ${pc(P(1964),'D')}, a swing of <b>${Math.round(Math.abs((P(1964).D-P(1964).R)-(P(1960).D-P(1960).R)))} points</b> in the margin. Democrats carried only <b>${cnt(1964)} of 159 counties</b> (${cnt(1960)} in 1960). Republicans have won most presidential elections here ever since.`},
  {act:1,view:'winners',t:'Blue at every level',h:()=>`In our data, Democrats won <b>${govDpre} of the ${govPre.length}</b> governor's races before 2002${govPre.some(r=>r.wparty=='R')?` (in 1966, Republican Bo Callaway had the most votes but no majority, and the legislature chose Democrat Lester Maddox)`:''}. The first Republican Senate win in our data is ${firstRSen.dname==firstRSen.winner?firstRSen.rname:firstRSen.winner} in ${firstRSen.year}. The presidency was the first crack: Goldwater (1964) and Nixon (1972) carried the state.`},
  {act:1,view:'map',y:1976,m:'margin',t:'A native son',h:()=>`Georgia's own Jimmy Carter won <span class="b">${pc(P(1976),'D')}</span> in 1976 and ${cnt(1976)} of 159 counties. Carter would be the last Democrat to win Georgia until 1992.`},
  {act:2,view:'lean',t:'Since 1984: right of the nation',h:()=>`Compare Georgia with the national margin. Since 1984, Georgia has been to the right of the nation in <b>${allRight?'every':'most'} one of the ${LEANY.length}</b> presidential elections (${LEANY[0]}–${LEANY[LEANY.length-1]}). The gap was as wide as <span class="r">${Math.min(...LEANY.map(lean))} points</span> in 2004.`},
@@ -287,7 +290,7 @@ function showStep(i){
 }
 function buildSteps(){
  const box=document.getElementById('steps');
- STEPS.forEach((s,i)=>{const d=document.createElement('div');d.className='step';d.dataset.i=i;
+ STEPS.forEach((s,i)=>{const d=document.createElement('div');d.className='step';d.dataset.i=i;d.id='step-'+i;
   d.innerHTML=`<div class="txt"><div class="yr">${ACTS[s.act][0]}</div><h3>${s.t}</h3><div>${s.h()}</div></div>`;box.appendChild(d)});
  let active=-1;
  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){const i=+e.target.dataset.i;if(i!==active){active=i;showStep(i)}}}),{rootMargin:'-45% 0px -45% 0px'});
