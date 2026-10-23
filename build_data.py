@@ -69,6 +69,7 @@ for (y, special, stage), g in s.groupby(["year", "special", "stage"]):
     label = f"{y}" + (" Special" if special else "") + (" Runoff" if stage == "runoff" else "")
     r = row(label, int(y), cands, tot)
     if r: out["senate"].append(r)
+out["senate"].append(row("2022", 2022, [("Raphael Warnock", "D", 1946117, 49.44), ("Herschel Walker", "R", 1908442, 48.49)]))
 out["senate"].sort(key=lambda r: (r["year"], "Special" in r["label"], "Runoff" in r["label"]))
 
 # County results (presidential)
@@ -92,26 +93,38 @@ out["president"].append(dict(label="2024", year=2024, D=round(100 * d24 / t24, 2
     O=round(100 * (t24 - d24 - r24) / t24, 2), dname="Kamala Harris", rname="Donald Trump",
     winner="Donald Trump" if r24 > d24 else "Kamala Harris", wparty="R" if r24 > d24 else "D"))
 
-# Demographics (Census Bureau population estimates): snapshots 2000, 2010, 2019
-def demo(path, year_code):
+# Demographics (Census Bureau July-1 population estimates), only for election years the files cover
+def demo(path, year_code, tot_code, old_from):
     d = pd.read_csv(path, encoding="latin1")
     d = d[d.YEAR == year_code]
-    tot = d[d.AGEGRP == 99] if (d.AGEGRP == 99).any() else d[d.AGEGRP == 0]
     res = {}
     for fip, g in d.groupby("COUNTY"):
-        t = g[g.AGEGRP.isin([99, 0])].sort_values("AGEGRP", ascending=False).iloc[0] if (g.AGEGRP == 99).any() else g[g.AGEGRP == 0].iloc[0]
+        t = g[g.AGEGRP == tot_code].iloc[0]
         pop = t.TOT_POP
         two = lambda col: t[col + "_MALE"] + t[col + "_FEMALE"]
-        old = g[g.AGEGRP >= 14]
-        old = old[old.AGEGRP != 99].TOT_POP.sum()
-        res["13%03d" % fip] = [int(pop), round(100 * two("NHWA") / pop, 1), round(100 * two("NHBA") / pop, 1),
-                               round(100 * two("H") / pop, 1), round(100 * two("NHAA") / pop, 1), round(100 * old / pop, 1)]
+        old = g[(g.AGEGRP >= old_from) & (g.AGEGRP != 99)].TOT_POP.sum()
+        res["13%03d" % fip] = [int(pop), *(round(float(100 * two(c) / pop), 1) for c in ("NHWA", "NHBA", "H", "NHAA")), round(float(100 * old / pop), 1)]
     return res
-out["demo"] = {2000: demo("data/census_2000s_ga.csv", 3), 2010: demo("data/census_2010s_ga.csv", 3), 2019: demo("data/census_2010s_ga.csv", 12)}
+out["demo"] = {}
+for y, yc in ((2000, 2), (2004, 6), (2008, 10)):
+    out["demo"][y] = demo("data/census_2000s_ga.csv", yc, 99, 13)
+for y, yc in ((2012, 5), (2016, 9)):
+    out["demo"][y] = demo("data/census_2010s_ga.csv", yc, 0, 14)
+
+# National popular vote (for "Georgia vs. the nation"); 1976-2020 summed from MEDSL state rows, 2024 from county file,
+# 1960-1972 from Wikipedia infoboxes (D, R, total votes)
+nat = {1960: (34220984, 34108157, 68838219), 1964: (43129040, 27175754, 70639284),
+       1968: (31271839, 31783783, 73199998), 1972: (29173222, 47168711, 77744027)}
+for y, g in pd.read_csv("data/1976-2020-president.csv").groupby("year"):
+    nat[int(y)] = (int(g[g.party == "DEMOCRAT"].candidatevotes.sum()), int(g[g.party == "REPUBLICAN"].candidatevotes.sum()),
+                   int(g.drop_duplicates("state").totalvotes.sum()))
+c24 = pd.read_csv("data/county_2024.csv")
+nat[2024] = (int(c24.votes_dem.sum()), int(c24.votes_gop.sum()), int(c24.total_votes.sum()))
+out["nation"] = {y: [round(100 * d / t, 2), round(100 * r / t, 2)] for y, (d, r, t) in sorted(nat.items())}
 
 json.dump(out, open("data.json", "w"))
 open("data.js", "w").write("window.GA=" + json.dumps(out, separators=(",", ":")) + ";")
 for k in ("president", "governor", "senate"):
     print(k, len(out[k]), [r["label"] for r in out[k]])
 print({y: len(v) for y, v in out["county"].items()})
-print({y: len(v) for y, v in out["demo"].items()}, out["demo"][2019]["13121"])
+print({y: len(v) for y, v in out["demo"].items()}, out["demo"][2008]["13121"], out["demo"][2016]["13121"])
