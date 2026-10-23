@@ -1,6 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Georgia Election Dashboard</title>
 <script src="plotly.min.js"></script><script src="data.js"></script>
+<script src="georgia_counties.js"></script>
 <style>
 :root{--navy:#1f2a44;--blue:#2b6cb0;--red:#c53030}
 html{scroll-behavior:smooth}section{scroll-margin-top:52px}
@@ -296,5 +297,5 @@ function buildSteps(){
 
 trend('president');
 compareBar('cmpbar');compareRest();
-fetch('georgia_counties.geojson').then(r=>r.json()).then(g=>{geo=g;buildSteps();exploreMap()});
+geo=window.GEO;buildSteps();exploreMap();
 </script></body></html>
