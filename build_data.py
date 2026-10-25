@@ -41,7 +41,7 @@ def from_wiki(kind, yrs):
 out = {"president": [], "governor": [], "senate": [], "county": {}}
 
 # President
-out["president"] += from_wiki("pres", range(1960, 1976, 4))
+out["president"] += from_wiki("pres", range(1948, 1976, 4))
 p = pd.read_csv("data/1976-2020-president.csv"); p = p[p.state_po == "GA"]
 for y, g in p.groupby("year"):
     tot = g.totalvotes.iloc[0]
@@ -51,10 +51,14 @@ for y, g in p.groupby("year"):
 out["president"].sort(key=lambda r: r["year"])
 
 # Governor
-out["governor"] = from_wiki("gov", range(1962, 2023, 4))
+out["governor"] = from_wiki("gov", range(1950, 2023, 4))
+# 1966: Callaway (R) won a plurality, but no one reached 50% and the legislature elected Maddox (D).
+for r in out["governor"]:
+    if r["year"] == 1966:
+        r.update(winner="Lester Maddox", wparty="D")
 
-# Senate: Wikipedia before 2004, MEDSL afterwards
-out["senate"] = from_wiki("sen", range(1960, 2004, 2))
+# Senate: Wikipedia before 2004 and after 2021, MEDSL in between
+out["senate"] = from_wiki("sen", [*range(1950, 2004, 2), 2022])
 s = pd.read_csv("data/1976-2020-senate.csv"); s = s[(s.state_po == "GA") & s.stage.isin(["gen", "runoff"])]
 for (y, special, stage), g in s.groupby(["year", "special", "stage"]):
     tot = g.totalvotes.iloc[0]
@@ -70,6 +74,24 @@ for (y, special, stage), g in s.groupby(["year", "special", "stage"]):
     r = row(label, int(y), cands, tot)
     if r: out["senate"].append(r)
 out["senate"].sort(key=lambda r: (r["year"], "Special" in r["label"], "Runoff" in r["label"]))
+
+# Story view: Wikipedia races that row() drops, either because no Republican ran
+# ("unopposed") or because vote totals haven't been collected yet ("missing").
+out["extra"] = {}
+for office, kind in (("president", "pres"), ("governor", "gov"), ("senate", "sen")):
+    have = {r["label"] for r in out[office]}
+    extra = []
+    for key, c in sorted(wiki.items()):
+        if not key.startswith(kind) or key[len(kind):] in have:
+            continue
+        y = int(key[len(kind):])
+        cands = [(x["c"], party(x["p"]), num(x["pc"])) for x in c]
+        if any(p == "R" for _, p, _ in cands) or any(pc is None for *_, pc in cands):
+            extra.append(dict(label=str(y), year=y, status="missing", cands=[f"{n} ({p})" for n, p, _ in cands]))
+        else:
+            win = max(cands, key=lambda x: x[2])
+            extra.append(dict(label=str(y), year=y, status="unopposed", winner=win[0], wparty=win[1]))
+    out["extra"][office] = extra
 
 # County results (presidential)
 county = {}
@@ -113,5 +135,6 @@ json.dump(out, open("data.json", "w"))
 open("data.js", "w").write("window.GA=" + json.dumps(out, separators=(",", ":")) + ";")
 for k in ("president", "governor", "senate"):
     print(k, len(out[k]), [r["label"] for r in out[k]])
+print("extra", {k: [(r["label"], r["status"]) for r in v] for k, v in out["extra"].items()})
 print({y: len(v) for y, v in out["county"].items()})
 print({y: len(v) for y, v in out["demo"].items()}, out["demo"][2019]["13121"])

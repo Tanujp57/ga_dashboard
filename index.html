@@ -35,8 +35,30 @@
   #snaplab { font-size: 12px; color: #667085; }
   .wide { grid-column: 1 / -1; }
   small { display: block; padding: 4px 24px 16px; color: #666; }
+  #story { max-width: 1240px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; }
+  #story .card { padding: 12px; }
+  #story p { line-height: 1.6; margin: 0 0 12px; }
+  #story h2 { font-size: 30px; margin: 4px 0 12px; }
+  #story h3 { font-size: 21px; margin: 4px 0 10px; }
+  .story-text { padding: 14px 18px !important; }
+  .lead { font-size: 18px; max-width: 900px; }
+  .kicker { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: #c53030; }
+  .flips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+  .flip { border-left: 5px solid #c53030; background: #fdf2f2; border-radius: 6px; padding: 10px 14px; font-size: 14px; line-height: 1.45; }
+  .flip span { font-weight: 600; color: #667085; }
+  .flip b { display: block; font-size: 32px; color: #c53030; line-height: 1.2; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .caption { font-size: 13px; color: #555; line-height: 1.5; padding: 6px 12px 4px; }
+  .story-maps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .story-maps h4 { margin: 6px 12px 0; font-size: 15px; }
+  .story-map { height: 400px; position: relative; }
+  .story-map svg { width: 100%; height: 100%; display: block; }
+  .map-legend { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; color: #49576b; padding-top: 4px; }
+  .map-legend i { width: 260px; height: 12px; border-radius: 2px; border: 1px solid #aab3bf;
+    background: linear-gradient(to right, #9b1c1c, #f7f7f7, #1e4e8c); }
   @media (max-width: 900px) {
     .grid { grid-template-columns: 1fr; }
+    .cols, .flips, .story-maps { grid-template-columns: 1fr; }
     .wide { grid-column: 1; }
     header { flex-wrap: wrap; }
     .map-plot { height: 400px; }
@@ -48,7 +70,7 @@
 <body>
 <header>
   <h1>Georgia Elections Dashboard</h1>
-  <nav id="tabs" aria-label="Election type"><button data-o="president" class="on" aria-pressed="true">President</button><button data-o="governor" aria-pressed="false">Governor</button><button data-o="senate" aria-pressed="false">U.S. Senate</button></nav>
+  <nav id="tabs" aria-label="Election type"><button data-o="president" class="on" aria-pressed="true">President</button><button data-o="governor" aria-pressed="false">Governor</button><button data-o="senate" aria-pressed="false">U.S. Senate</button><button data-o="story" aria-pressed="false">Story</button></nav>
 </header>
 
 <!-- Two synchronized maps: one always shows presidential margin. -->
@@ -73,7 +95,7 @@
 </div>
 
 <!-- Existing charts, now below the paired maps. -->
-<div class="grid">
+<div class="grid" id="trend-grid">
   <div class="card"><div id="share" style="height:440px"></div></div>
   <div class="card"><div id="margin" style="height:440px"></div></div>
   <div class="card wide" id="president-scatter">
@@ -82,6 +104,99 @@
   </div>
 </div>
 <small id="note"></small>
+
+<!-- Story view: a guided narrative of Georgia's top-down partisan realignment. -->
+<main id="story" hidden>
+  <section class="card story-text">
+    <div class="kicker">Georgia, 1960–2024</div>
+    <h2>How Georgia turned red, one office at a time</h2>
+    <p class="lead">For nearly a century after Reconstruction, Georgia was a one-party Democratic state, part of the "Solid South."
+      The realignment started at the top of the ballot. In 1964, Georgia voted Republican for president for the first time ever.
+      Senate and governor's races took much longer to follow.</p>
+    <div class="flips">
+      <div class="flip"><span>President</span><b>1964</b>Barry Goldwater becomes the first Republican nominee ever to carry Georgia.</div>
+      <div class="flip"><span>U.S. Senate</span><b>1980</b>Mack Mattingly becomes Georgia's first Republican senator since Reconstruction.</div>
+      <div class="flip"><span>Governor</span><b>2002</b>Sonny Perdue becomes Georgia's first Republican governor since Reconstruction.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="story-text">
+      <div class="kicker">The big picture</div>
+      <h3>Who won every statewide race</h3>
+      <p>Each square is one election, colored by the party that took office. Read left to right: Republican red appears first in the presidential row,
+        then slowly works its way down the ballot. The shaded band in each row starts at that office's first Republican win.</p>
+    </div>
+    <div id="story-tiles" style="height:330px"></div>
+  </section>
+
+  <section class="card">
+    <div class="story-text">
+      <div class="kicker">Chapter 1 · President</div>
+      <h3>1964: the top of the ticket breaks first</h3>
+      <div class="cols">
+      <p>In 1960, John F. Kennedy carried Georgia by 25 points. Four years later, Barry Goldwater, who had voted against the
+        Civil Rights Act of 1964, carried it by 8. That 33-point swing made Georgia a Republican state in a presidential race for the first time.</p>
+      <p>Georgia has leaned Republican for president ever since. The exceptions were segregationist George Wallace's third-party win in 1968,
+        Georgia's own Jimmy Carter in 1976 and 1980, Bill Clinton's narrow plurality in 1992, and Joe Biden's 0.2-point win in 2020.</p>
+      </div>
+    </div>
+    <div id="story-pres" style="height:400px"></div>
+    <div class="caption">Bars show the Democratic minus Republican share of the vote. The shaded area begins with the first Republican win.</div>
+  </section>
+
+  <section class="card">
+    <div class="story-text">
+      <h3>Where the 1964 flip happened</h3>
+      <p id="story-map-text"></p>
+    </div>
+    <div class="story-maps">
+      <div><h4>1960: Kennedy (D) vs. Nixon (R)</h4><div id="story-map-1960" class="story-map"></div></div>
+      <div><h4>1964: Johnson (D) vs. Goldwater (R)</h4><div id="story-map-1964" class="story-map"></div></div>
+    </div>
+    <div class="map-legend">Republican +80<i></i>Democratic +80</div>
+  </section>
+
+  <section class="card">
+    <div class="story-text">
+      <div class="kicker">Chapter 2 · U.S. Senate</div>
+      <h3>1980–2004: the Senate follows a generation later</h3>
+      <div class="cols">
+      <p>Georgians kept sending Democrats to the Senate long after they started voting Republican for president. Through 1966, Republicans often didn't field a candidate at all.
+        In 1980, Mack Mattingly narrowly beat longtime senator Herman Talmadge, but Democrats took the seat back in 1986.</p>
+      <p>The lasting flip came later. Paul Coverdell won in 1992, Saxby Chambliss beat Max Cleland in 2002, and Johnny Isakson's 2004 win
+        gave Republicans both of Georgia's Senate seats. They held both until January 2021, when Jon Ossoff and Raphael Warnock won the runoffs.</p>
+      </div>
+    </div>
+    <div id="story-senate" style="height:440px"></div>
+    <div class="caption">Where a runoff decided the seat, the bar shows the runoff. Light blue bars mark races with no Republican nominee.</div>
+  </section>
+
+  <section class="card">
+    <div class="story-text">
+      <div class="kicker">Chapter 3 · Governor</div>
+      <h3>2002: the governor's office is the last to flip</h3>
+      <div class="cols">
+      <p>Governor's races held out the longest. In 1966, Republican Bo Callaway actually won the most votes. No candidate won a majority, though,
+        so under Georgia law the Democratic legislature chose the governor, and it picked Lester Maddox. Democrats then held the office for 36 more years, often by landslides.</p>
+      <p>By the 1990s, Democratic margins had shrunk to single digits. In 2002, Sonny Perdue unseated Roy Barnes, and Republicans have won every governor's race since.
+        Still, Brian Kemp's 2018 margin was only 1.4 points.</p>
+      </div>
+    </div>
+    <div id="story-gov" style="height:440px"></div>
+    <div class="caption">The 1966 bar shows Callaway's plurality. The tile chart above shows Maddox, who took office.</div>
+  </section>
+
+  <section class="card story-text">
+    <div class="kicker">Epilogue</div>
+    <h3>A realignment from the top of the ballot down</h3>
+    <p>Georgia's move to the Republicans took about four decades and reached each office in turn: the presidency in 1964, the Senate in 1980
+      (for good by 2004), and the governorship in 2002. For a generation, many Georgians voted Republican for president while still electing conservative Democrats at home.</p>
+    <p>The story isn't finished. Biden carried Georgia in 2020, Ossoff and Warnock won both Senate seats in 2021, and Trump won the state back in 2024.
+      Today Georgia is one of the closest swing states in the country.</p>
+    <p class="caption" id="story-note" style="padding:0"></p>
+  </section>
+</main>
 <script>
 const BLUE = '#2b6cb0', RED = '#c53030', GRAY = '#718096';
 const TITLES = {president:'Presidential', governor:'Gubernatorial', senate:'U.S. Senate'};
@@ -282,6 +397,198 @@ function scatter() {
       yaxis:{title:'Margin (D−R, pts)',zeroline:true},showlegend:false}, {responsive:true});
 }
 
+// ---------- Story view ----------
+const STORY_ROWS = [['president','President'], ['class3','Senate: Talmadge seat'],
+  ['class2','Senate: Russell–Nunn seat'], ['governor','Governor']];
+const STORY_CATS = {
+  D:{n:'Democrat', c:BLUE}, R:{n:'Republican', c:RED}, O:{n:'Third party (Wallace)', c:'#b7791f'},
+  unopposed:{n:'Democrat, no Republican nominee', c:'#90b4e0'}, missing:{n:'Vote totals not in dataset yet', c:'#a0aec0'}
+};
+const STORY_PLOT = {responsive:true, displayModeBar:false};
+const fmtMargin = m => m === 0 ? 'even' : (m > 0 ? 'D +' : 'R +') + Math.abs(m).toFixed(1);
+// One entry per decided seat: a runoff replaces the general election it followed.
+function storyRaces(office) {
+  const all = [...GA[office].map(r => ({...r, status:'contested'})), ...((GA.extra || {})[office] || [])];
+  const groups = new Map();
+  for (const r of all) {
+    const year = /Runoff/.test(r.label) && r.year % 2 ? r.year - 1 : r.year;
+    // Georgia's Class 2 seat (Russell, Nunn, Ossoff) is up in years divisible by 6 counting from 1960.
+    const seat = office !== 'senate' ? office : /Special/.test(r.label) || (year - 1960) % 6 ? 'class3' : 'class2';
+    if (!groups.has(seat + year)) groups.set(seat + year, {seat, year, races:[]});
+    groups.get(seat + year).races.push(r);
+  }
+  const out = [...groups.values()].map(g => {
+    g.races.sort((a, b) => /Runoff/.test(a.label) - /Runoff/.test(b.label));
+    const d = g.decider = g.races[g.races.length - 1];
+    g.margin = d.status === 'contested' ? +(d.D - d.R).toFixed(1) : d.status === 'unopposed' ? 100 : null;
+    g.cat = d.status === 'contested' ? (d.wparty === 'O' ? 'O' : g.margin >= 0 ? 'D' : 'R') : d.status;
+    g.party = d.status === 'missing' ? null : d.wparty;
+    return g;
+  }).sort((a, b) => a.year - b.year);
+  // Seats decided in the same year (2020's regular and special Senate races) sit side by side.
+  out.forEach(g => {
+    const same = out.filter(o => o.year === g.year);
+    g.x = same.length > 1 ? g.year + (same.indexOf(g) - (same.length - 1) / 2) * .9 : g.year;
+    g.width = same.length > 1 ? .85 : office === 'senate' ? 1.6 : 2.6;
+  });
+  return out;
+}
+function describeRace(r) {
+  if (r.status === 'unopposed') return r.label + ': ' + r.winner + ' (D), no Republican nominee';
+  if (r.status === 'missing') return r.label + ': ' + r.cands.join(' vs. ') + '<br>Vote totals not in dataset yet';
+  let s = r.label + ': ' + r.dname + ' (D) ' + r.D + '% vs. ' + r.rname + ' (R) ' + r.R + '%';
+  if (r.wparty === 'O') s += '<br>Winner: ' + r.winner + ' (third party, ' + (100 - r.D - r.R).toFixed(1) + '% other)';
+  else if (r.wparty === 'D' && r.R > r.D) s += '<br>No majority; the legislature chose ' + r.winner;
+  return s;
+}
+const describeGroup = g => g.races.map(describeRace).join('<br>');
+function firstRepublican(races) { return races.find(g => g.party === 'R'); }
+function storyXRange() {
+  const years = STORY_ROWS.flatMap(([k]) => storyRaces(k.startsWith('class') ? 'senate' : k).map(g => g.year));
+  return [Math.min(...years) - 3, Math.max(...years) + 3];
+}
+
+function drawStoryTiles(xr) {
+  const rows = STORY_ROWS.map(([key, name]) => {
+    const races = storyRaces(key.startsWith('class') ? 'senate' : key);
+    return {name, races:key.startsWith('class') ? races.filter(g => g.seat === key) : races};
+  });
+  // Tiles use the party that took office, not the vote-margin sign used by the bar charts.
+  const tileCat = g => g.decider.status === 'contested' ? g.party : g.cat;
+  const traces = Object.entries(STORY_CATS).map(([cat, {n, c}]) => {
+    const pts = rows.flatMap(row => row.races.filter(g => tileCat(g) === cat).map(g => ({row, g})));
+    return {type:'scatter', mode:'markers', name:n, x:pts.map(p => p.g.year), y:pts.map(p => p.row.name),
+      text:pts.map(p => describeGroup(p.g)), hovertemplate:'%{text}<extra></extra>',
+      marker:{symbol:'square', size:17, color:cat === 'missing' ? 'rgba(0,0,0,0)' : c, line:{color:c, width:cat === 'missing' ? 2 : 0}}};
+  }).filter(t => t.x.length);
+  const order = rows.map(r => r.name).reverse();
+  const shapes = [], annotations = [];
+  rows.forEach(row => {
+    const first = firstRepublican(row.races), i = order.indexOf(row.name);
+    if (!first) return;
+    shapes.push({type:'rect', xref:'x', yref:'y', x0:first.year - 1.6, x1:xr[1], y0:i - .42, y1:i + .42,
+      fillcolor:'rgba(197,48,48,.09)', line:{width:0}, layer:'below'});
+    annotations.push({x:first.year, y:row.name, text:'<b>' + first.year + '</b>', showarrow:false,
+      yshift:17, font:{color:RED, size:11}});
+  });
+  Plotly.react('story-tiles', traces, {
+    margin:{l:170, r:20, t:16, b:60}, xaxis:{range:xr, dtick:4, showgrid:false},
+    yaxis:{type:'category', categoryorder:'array', categoryarray:order, showgrid:false},
+    legend:{orientation:'h', y:-.22}, shapes, annotations, hoverlabel:{align:'left'}
+  }, STORY_PLOT);
+}
+
+function drawStoryMargin(div, office, notes, xr) {
+  const races = storyRaces(office), first = firstRepublican(races);
+  const traces = Object.entries(STORY_CATS).map(([cat, {n, c}]) => {
+    const g = races.filter(r => r.cat === cat);
+    return cat === 'missing'
+      ? {type:'scatter', mode:'markers', name:n, x:g.map(r => r.x), y:g.map(() => 0), text:g.map(describeGroup),
+        hovertemplate:'%{text}<extra></extra>', marker:{symbol:'circle-open', size:12, color:c, line:{width:2}}}
+      : {type:'bar', name:n, x:g.map(r => r.x), y:g.map(r => r.margin), width:g.map(r => r.width),
+        marker:{color:c, line:{color:'#1f2a44', width:g.map(r => r === first ? 2.5 : 0)}},
+        text:g.map(describeGroup), textposition:'none', hovertemplate:'%{text}<br>Margin: %{customdata}<extra></extra>',
+        customdata:g.map(r => r.cat === 'unopposed' ? 'uncontested' : fmtMargin(r.margin))};
+  }).filter(t => t.x.length);
+  const annotations = notes.map(n => {
+    const r = races.find(r => r.year === n.year && (!n.seat || r.seat === n.seat));
+    const y = r.margin ?? 0;
+    return {x:r.x, y, text:n.text, showarrow:true, arrowhead:0, arrowwidth:1, arrowcolor:'#718096',
+      ax:n.ax || 0, ay:n.ay || (y >= 0 ? -36 : 36), font:{size:11.5, color:n.color || '#1f2a44'},
+      bgcolor:'rgba(255,255,255,.88)', borderpad:2};
+  });
+  const shapes = first ? [{type:'rect', xref:'x', yref:'paper', x0:first.year - 1.6, x1:xr[1], y0:0, y1:1,
+    fillcolor:'rgba(197,48,48,.07)', line:{width:0}, layer:'below'}] : [];
+  if (first) annotations.push({x:first.year - 1.6, y:1, xref:'x', yref:'paper', xanchor:'left', yanchor:'bottom',
+    text:'First Republican win →', showarrow:false, font:{size:11, color:RED}});
+  const margins = races.filter(r => r.margin !== null).map(r => r.margin);
+  const yRange = [Math.min(-30, Math.min(...margins) - 28), races.some(r => r.cat === 'unopposed') ? 118 : Math.max(...margins) + 22];
+  Plotly.react(div, traces, {
+    margin:{l:60, r:16, t:24, b:60}, barmode:'overlay', bargap:0,
+    xaxis:{range:xr, dtick:4, showgrid:false}, yaxis:{title:'D − R margin (pts)', range:yRange, zeroline:true, zerolinecolor:'#4a5568'},
+    legend:{orientation:'h', y:-.14}, shapes, annotations, hoverlabel:{align:'left'}
+  }, STORY_PLOT);
+}
+
+const storyMaps = [];
+function makeStoryMap(id, year) {
+  const c = GA.county[year], project = mapProjection(), container = document.getElementById(id);
+  const svg = svgEl('svg', {viewBox:'0 0 540 460', preserveAspectRatio:'xMidYMid meet', role:'img',
+    'aria-label':'Georgia county presidential margins, ' + year});
+  const view = {id, year, c, paths:new Map()};
+  geo.features.forEach(f => {
+    const path = svgEl('path', {d:countyPath(f.geometry, project), class:'county', 'fill-rule':'evenodd',
+      fill:interpolateColor(colorStops.margin, (marg(c, f.id) + 80) / 160)});
+    path.addEventListener('pointerenter', ev => storyMapHover(f.id, ev, view));
+    path.addEventListener('pointermove', ev => storyMapHover(f.id, ev, view));
+    path.addEventListener('pointerleave', () => storyMapHover(null));
+    svg.appendChild(path); view.paths.set(f.id, path);
+  });
+  view.outline = svgEl('path', {fill:'none', stroke:'#ffbd38', 'stroke-width':'3.5',
+    'vector-effect':'non-scaling-stroke', 'pointer-events':'none'});
+  svg.appendChild(view.outline);
+  view.tip = document.createElement('div'); view.tip.className = 'map-tip';
+  container.append(svg, view.tip);
+  storyMaps.push(view);
+}
+function storyMapHover(fid, ev, src) {
+  storyMaps.forEach(v => {
+    v.outline.setAttribute('d', fid ? v.paths.get(fid).getAttribute('d') : '');
+    v.tip.style.display = 'none';
+  });
+  if (!fid) return;
+  const [a, b] = storyMaps, ma = marg(a.c, fid), mb = marg(b.c, fid);
+  const tip = src.tip;
+  tip.textContent = countyNames[countyIndex.get(fid)] + '\n' + a.year + ': ' + fmtMargin(ma) + '\n' + b.year + ': ' + fmtMargin(mb) +
+    '\nSwing: ' + Math.abs(mb - ma).toFixed(1) + ' pts toward ' + (mb < ma ? 'Republicans' : 'Democrats');
+  tip.style.display = 'block';
+  const rect = document.getElementById(src.id).getBoundingClientRect();
+  tip.style.left = Math.max(4, Math.min(ev.clientX - rect.left + 13, rect.width - tip.offsetWidth - 5)) + 'px';
+  tip.style.top = Math.max(4, Math.min(ev.clientY - rect.top + 13, rect.height - tip.offsetHeight - 5)) + 'px';
+}
+
+let storyDrawn = false;
+function drawStory() {
+  const xr = storyXRange();
+  drawStoryTiles(xr);
+  drawStoryMargin('story-pres', 'president', [
+    {year:1960, text:'Kennedy +25', ay:-25},
+    {year:1964, text:'<b>1964: Goldwater +8</b><br>first Republican ever<br>to carry Georgia', color:RED, ax:-10, ay:60},
+    {year:1968, text:'Wallace (3rd party) wins', ay:-40, ax:15},
+    {year:1976, text:'Native son Jimmy Carter', ay:-22},
+    {year:1992, text:'Clinton', ay:-35},
+    {year:2020, text:'Biden by 0.2', ay:-35}
+  ], xr);
+  drawStoryMargin('story-senate', 'senate', [
+    {year:1962, text:'1960–66: no Republican<br>on the ballot', ay:-22},
+    {year:1980, text:'<b>1980: Mattingly (R)</b><br>ousts Talmadge', color:RED, ay:50},
+    {year:1986, text:'Fowler (D)<br>wins it back', ay:-50},
+    {year:2002, text:'<b>2002: Chambliss (R)</b><br>beats Cleland', color:RED, ay:50, ax:-55},
+    {year:2004, text:'<b>2004: both seats<br>Republican</b>', color:RED, ay:-65, ax:25},
+    {year:2020, seat:'class2', text:'2021 runoffs: Ossoff<br>& Warnock win both', ay:-45, ax:-25}
+  ], xr);
+  drawStoryMargin('story-gov', 'governor', [
+    {year:1962, text:'No Republican<br>nominee', ay:-22},
+    {year:1966, text:'Callaway (R) wins plurality;<br>legislature picks Maddox (D)', ay:50, ax:25},
+    {year:1978, text:'Busbee +61', ay:-22},
+    {year:1994, text:'1990s: margins shrink', ay:-45},
+    {year:2002, text:'<b>2002: Perdue (R)</b><br>first GOP governor<br>since Reconstruction', color:RED, ay:40, ax:-60},
+    {year:2018, text:'Kemp +1.4', ay:40}
+  ], xr);
+  makeStoryMap('story-map-1960', 1960);
+  makeStoryMap('story-map-1964', 1964);
+  const won = (y, i) => Object.values(GA.county[y]).filter(v => v[i] > v[1 - i]).length;
+  const total = Object.keys(GA.county[1964]).length;
+  document.getElementById('story-map-text').textContent =
+    'Kennedy won ' + won(1960, 0) + ' of Georgia\'s ' + total + ' counties in 1960. Goldwater won ' + won(1964, 1) + ' in 1964. ' +
+    'The biggest swings came in rural southwest Georgia: Miller, Seminole, Calhoun, and Early counties each moved more than 120 points toward the Republicans. ' +
+    'Johnson held on mostly in the north Georgia mountains and around Atlanta (Fulton County). Hover over a county to compare it in both years.';
+  const missing = Object.entries(GA.extra || {}).flatMap(([o, rs]) => rs.filter(r => r.status === 'missing').map(r => TITLES[o] + ' ' + r.label));
+  document.getElementById('story-note').textContent = 'Sources: same as the President, Governor, and U.S. Senate tabs.' +
+    (missing.length ? ' Vote totals are not yet in the dataset for: ' + missing.join(', ') + '.' : '');
+  storyDrawn = true;
+}
+
 let timer = null;
 document.getElementById('play').onclick = function() {
   if (timer) {clearInterval(timer);timer=null;this.textContent='▶';return;}
@@ -296,7 +603,7 @@ yr.oninput = renderMaps;
 document.getElementById('metric').onchange = renderMaps;
 document.getElementById('xmetric').onchange = scatter;
 function selectOffice(office) {
-  const isPresident = office === 'president';
+  const isPresident = office === 'president', isStory = office === 'story';
   document.querySelectorAll('#tabs button').forEach(b => {
     const selected = b.dataset.o === office;
     b.classList.toggle('on', selected);
@@ -305,6 +612,19 @@ function selectOffice(office) {
   // These county views (including the scatter and year control) use presidential results only.
   for (const id of ['president-maps', 'president-yearbar', 'president-scatter']) {
     document.getElementById(id).hidden = !isPresident;
+  }
+  for (const id of ['trend-grid', 'note']) document.getElementById(id).hidden = isStory;
+  document.getElementById('story').hidden = !isStory;
+  if (isStory) {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+      document.getElementById('play').textContent = '▶';
+    }
+    // Plotly sizes charts from their container, so draw only once the story is visible.
+    if (!storyDrawn) drawStory();
+    else document.querySelectorAll('#story .js-plotly-plot').forEach(p => Plotly.Plots.resize(p));
+    return;
   }
   // Stop the election-year animation if a different office is selected.
   if (!isPresident && timer) {
