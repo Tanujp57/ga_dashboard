@@ -1,16 +1,13 @@
-Georgia Elections Dashboard — Paired County Maps
+Georgia Elections Dashboard
 
-1. Extract this archive.
-2. Open ga_dashboard/index.html in your browser. The maps and charts work directly from the files (no server required).
-   Or, optionally, run `python dashboard.py` from the ga_dashboard folder.
-3. Use the shared election-year slider for both maps.
-4. Use the dropdown above the right map to choose a demographic variable.
-5. Hover a county in either map to outline the same county in both maps.
+To run: open index.html in a web browser. No install, server, or internet connection is needed.
 
-The left map always shows presidential margin (Democratic minus Republican).
-The demographic figures are Census estimates available for 2000, 2010, and 2019;
-the closest available snapshot is displayed next to the current election year.
+Tabs:
+- Story (default): how Georgia flipped from Democratic to Republican, first for
+  president (1964), then U.S. Senate (1980), then governor (2002).
+- President: paired county maps (presidential margin and a demographic of your
+  choice) with a shared election-year slider. Hover a county to outline it on both maps.
+- President / Governor / U.S. Senate: statewide vote share and margin over time.
 
-All resources are local, including Georgia county geometry in georgia_counties.js.
-For manual updates to a previous version of the project, replace index.html
-and add georgia_counties.js to the same directory.
+To update the data: edit files in data/, then run `python build_data.py`
+(requires pandas). This regenerates data.js, which index.html loads.
