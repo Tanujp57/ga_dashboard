@@ -37,6 +37,7 @@
     features.forEach(f => mapCounties.set(String(f.id), `${f.properties.NAME} County`));
     const project = makeProjection(features);
     ['hero-map','story-map','explore-map'].forEach(id => createMap(id, features, project));
+    renderHeroMap();
     setupNarrative();
     setupExplore(countyYears);
     renderStoryMap(1964, 'margin');
@@ -138,11 +139,23 @@
     return colorMix(stops[i],stops[i+1],f-i);
   }
   function marginColor(v,range=80){return v<0?colorMix(MARGIN_STOPS[0],MARGIN_STOPS[1],(v+range)/range):colorMix(MARGIN_STOPS[1],MARGIN_STOPS[2],v/range);}
+  function renderHeroMap(){
+    const view=mapViews.get('hero-map'),countyData=GA.county['1964']||{};
+    if(!view)return;
+    view.kind='margin';view.year=1964;view.svg.setAttribute('aria-label','Georgia county presidential margins, 1964');
+    view.paths.forEach((p,id)=>{
+      const value=countyData[id]?margin(countyData[id]):0;
+      view.values[id]=value;p.setAttribute('fill',marginColor(value));
+      p.setAttribute('aria-label',`${mapCounties.get(id)}. Presidential margin, 1964: ${fmtSigned(value)} points (Democratic minus Republican).`);
+    });
+    const race=GA.president.find(r=>r.year===1964);
+    if(race){const share=100*race.R/(race.D+race.R);document.querySelector('.hero-art-bottom strong').textContent=`${share.toFixed(1)}%`;}
+  }
   function renderStoryMap(year, mode='margin') {
     const countyData=GA.county[String(year)]||{};
-    const story=mapViews.get('story-map'), hero=mapViews.get('hero-map');
-    [story,hero].forEach(v=>{
-      if(!v)return;
+    const story=mapViews.get('story-map');
+    const v=story;
+    if(v){
       v.kind=mode;v.year=year;v.values={};v.svg.setAttribute('aria-label',mode==='swing'?'Georgia county changes in presidential margin, 1960 to 1964':`Georgia county presidential margin, ${year}`);
       v.paths.forEach((p,id)=>{
         const row=countyData[id];let value=row?margin(row):0;
@@ -150,12 +163,10 @@
           const old=GA.county['1960']?.[id],latest=GA.county['1964']?.[id];
           value=old&&latest?margin(latest)-margin(old):0;
         }
-        v.values[id]=value;p.setAttribute('fill',marginColor(value,mode==='swing'?80:80));
+        v.values[id]=value;p.setAttribute('fill',marginColor(value));
         p.setAttribute('aria-label',`${mapCounties.get(id)}. ${mode==='swing'?'Change in presidential margin, 1960 to 1964':'Presidential margin, '+year}: ${fmtSigned(value)} points (Democratic minus Republican).`);
       });
-    });
-    const heroRec=GA.president.find(r=>r.year===1964);
-    if(heroRec){const share=100*heroRec.R/(heroRec.D+heroRec.R);document.querySelector('.hero-art-bottom strong').textContent=`${share.toFixed(1)}%`;}
+    }
     if(mode==='swing'){
       document.getElementById('rail-title').textContent='A county-by-county swing';
       document.getElementById('rail-caption').textContent='Change in county presidential margin, 1960 → 1964. Negative values indicate movement toward Republicans; positive values toward Democrats.';
