@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f0e8">
+  <meta name="description" content="A data-driven story of Georgia's changing electoral map, from presidential races to the Senate and governor's office.">
+  <title>Georgia Elections Dashboard — How Georgia Turned Red</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="plotly.min.js"></script>
+  <script defer src="data.js"></script>
+  <script defer src="georgia_counties.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#story">Skip to the story</a>
+  <header class="site-header">
+    <a class="masthead" href="#top" aria-label="Georgia Elections Dashboard home">Georgia Elections <span>Dashboard</span></a>
+    <nav class="chapter-nav" aria-label="Story chapters">
+      <span class="progress-label" id="progress-label">Opening</span>
+      <div class="progress-track" aria-hidden="true"><span id="progress-fill"></span></div>
+      <a href="#chapter-baseline" data-nav="baseline">Baseline</a>
+      <a href="#chapter-shift" data-nav="shift">The Shift</a>
+      <a href="#chapter-offices" data-nav="offices">One Office at a Time</a>
+      <a href="#chapter-geography" data-nav="geography">The Geography</a>
+      <a href="#chapter-close" data-nav="close">The Takeaway</a>
+    </nav>
+    <a class="header-explore" href="#explore">Explore data <span aria-hidden="true">↘</span></a>
+  </header>
+  <nav class="mobile-chapters" aria-label="Jump to a story chapter">
+    <a href="#chapter-baseline" data-nav="baseline">Baseline</a><a href="#chapter-shift" data-nav="shift">The Shift</a><a href="#chapter-offices" data-nav="offices">One Office at a Time</a><a href="#chapter-geography" data-nav="geography">The Geography</a><a href="#chapter-close" data-nav="close">The Takeaway</a>
+  </nav>
+
+  <main id="top">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-rule"></span> A Georgia election story · 1948—2024</p>
+        <h1 id="hero-title">How Georgia turned red,<br><em>one office at a time.</em></h1>
+        <p class="hero-deck">The state changed its vote for president long before it changed who it sent to Washington—or who it chose to govern at home.</p>
+        <p class="hero-byline">A guided look at the races, places and pauses in Georgia’s political realignment.</p>
+        <a class="scroll-cue" href="#story"><span class="scroll-line"></span> Scroll to follow the shift <span aria-hidden="true">↓</span></a>
+      </div>
+      <div class="hero-art" aria-label="Georgia county map showing presidential margin in 1964">
+        <div class="hero-art-top"><span>THE FIRST BREAK</span><span>1964 · PRESIDENT</span></div>
+        <div id="hero-map" class="map-stage map-stage-hero" role="group" aria-label="Interactive Georgia county map, presidential margin in 1964"></div>
+        <div class="hero-art-bottom"><strong>54.1%</strong><span>Goldwater’s share<br>of Georgia’s two-party vote</span><i class="mini-rule"></i><span class="hero-map-note">COUNTY MARGINS<br>1964</span></div>
+        <div class="hero-stamp" aria-hidden="true">THE<br>TURN</div>
+      </div>
+      <div class="hero-foot"><span>01 / 05</span><span>THE STORY OF A STATE IN MOTION</span><span>GEORGIA, USA</span></div>
+    </section>
+
+    <section id="story" class="story-shell" aria-label="The guided story">
+      <div class="story-intro">
+        <p class="eyebrow"><span class="eyebrow-rule"></span> The long view</p>
+        <p class="intro-text">A map can show who won. A timeline can show when. Put the two together, and another story appears: Georgia’s political change did not happen all at once, or in every contest at the same time.</p>
+      </div>
+
+      <section class="winner-section" aria-labelledby="winner-title">
+        <div class="section-heading-row"><div><p class="eyebrow"><span class="eyebrow-rule"></span> The long ballot</p><h2 id="winner-title">Who won every statewide race?</h2></div><p>Each square is one election, colored by the party that took office. Read left to right: Republican red appears first in the presidential row, then moves down the ballot. The shaded band in each row begins at that office’s first Republican win.</p></div>
+        <div class="static-legend winner-legend" aria-label="Square colors"><span><i class="swatch dem"></i>Democrat</span><span><i class="swatch rep"></i>Republican</span><span><i class="swatch other"></i>Third party (Wallace)</span><span><i class="swatch unopposed"></i>Democrat, no Republican nominee</span></div>
+        <div id="story-tiles" class="chart winner-chart" aria-label="Interactive square timeline of statewide election winners"></div>
+        <p class="chart-caption">Select a square to set the nearest county-election year in Explore. For a few exceptional races, the officeholder is not the candidate with the most votes; hover for the race details.</p>
+      </section>
+
+      <div class="scrolly">
+        <aside class="visual-rail" aria-label="Interactive Georgia election map">
+          <div class="rail-heading"><span class="rail-index" id="rail-index">01</span><div><p class="eyebrow">COUNTY VIEW</p><h2 id="rail-title">The Democratic baseline</h2></div></div>
+          <div id="story-map" class="map-stage" role="group" aria-label="Interactive Georgia county presidential margins, 1960"></div>
+          <div class="map-legend" id="story-legend">
+            <span>Republican lead</span><i class="legend-gradient"></i><span>Democratic lead</span>
+          </div>
+          <div class="map-scale"><span>−80 pts</span><span>Margin (D − R)</span><span>+80 pts</span></div>
+          <p class="rail-caption" id="rail-caption" aria-live="polite">Presidential county margins, 1960. Blue indicates a Democratic lead; red indicates a Republican lead.</p>
+          <div class="rail-focus" id="rail-focus"><span class="focus-dot"></span><span>Hover or focus a county to inspect its margin.</span></div>
+          <p class="rail-source">County presidential results · project dataset</p>
+        </aside>
+        <div class="story-steps">
+          <article class="story-step is-active" id="chapter-baseline" data-step="baseline" data-year="1960" data-mode="margin">
+            <p class="chapter-kicker"><span>01</span> Establish the baseline</p>
+            <h2>A blue state, by a wide margin.</h2>
+            <p>In 1960, John F. Kennedy carried Georgia by <strong id="baseline-margin">—</strong> points over Richard Nixon. The county map shows that statewide result was broad—but the shades also leave room for local variation.</p>
+            <p>Each county is colored by the Democratic share minus the Republican share. The farther from the pale center, the larger the two-party margin. The map tracks presidential votes, not the outcome of every race on the ballot.</p>
+            <p class="step-note">Use the map as a baseline, not as a proxy for county-level Senate or governor results.</p>
+          </article>
+          <article class="story-step" id="chapter-shift" data-step="shift" data-year="1964" data-mode="margin">
+            <p class="chapter-kicker"><span>02</span> The first break</p>
+            <h2>Four years later, the map changed dramatically.</h2>
+            <p>In 1964, Barry Goldwater carried Georgia. Between the 1960 and 1964 presidential races, the statewide Democratic-minus-Republican margin moved <strong id="pres-swing">—</strong> points toward Republicans.</p>
+            <p>The change was not geographically uniform. Focus a county to compare its margins across the two elections. A negative swing means movement toward the Republican side of the margin scale; it does not mean every voter changed parties.</p>
+            <div class="fact-line"><span class="fact-number" id="goldwater-share">—</span><span>Goldwater share of the two-party vote in 1964</span></div>
+          </article>
+          <article class="story-step" id="chapter-offices" data-step="offices" data-year="1980" data-mode="margin">
+            <p class="chapter-kicker"><span>03</span> One office at a time</p>
+            <h2>Presidential wins did not flip every office.</h2>
+            <p>Republican presidential wins arrived first. The first Republican U.S. senator of the modern era, Mack Mattingly, won in <strong>1980</strong>; Democrats won the seat back in 1986. The longer Republican run developed in the 1990s and 2000s. The map stays on the <strong>1980 presidential vote</strong> here; county-level Senate results are not present in this map dataset.</p>
+            <p>For governor, the handoff came later: Sonny Perdue defeated Roy Barnes in 2002, the first Republican gubernatorial win since Reconstruction. The office timelines below compare reported statewide margins—not a single, uniform realignment clock.</p>
+            <a class="text-link" href="#timeline-title">Compare the office timelines <span aria-hidden="true">↘</span></a>
+          </article>
+          <article class="story-step" id="chapter-geography" data-step="geography" data-year="1964" data-mode="swing">
+            <p class="chapter-kicker"><span>04</span> Not every county tells the same story</p>
+            <h2>The shift had a geography.</h2>
+            <p>This view subtracts each county’s 1960 presidential margin from its 1964 margin. Counties moving toward Republicans are red; counties moving toward Democrats are blue. The measure is a change in the two-party margin, not a count of people who switched sides.</p>
+            <p>The scatter below the story links county-level presidential margins to the demographic snapshots already included with the project. Those measures are descriptive, and the available snapshots are 2000, 2010 and 2019—not a continuous time series. They do not explain why a county voted as it did.</p>
+            <p class="step-note">County population and demographic estimates are a separate source and year from election results.</p>
+          </article>
+          <article class="story-step" id="chapter-close" data-step="close" data-year="2024" data-mode="margin">
+            <p class="chapter-kicker"><span>05</span> The bigger picture</p>
+            <h2>A staggered shift—not a straight line.</h2>
+            <p>Presidential politics moved first; Senate and gubernatorial outcomes followed on different schedules. And even after a long Republican run, Georgia remained competitive: Joe Biden carried the state in 2020, and Donald Trump carried it again in 2024.</p>
+            <p>The county map returns to the latest presidential election in this dataset. Scroll on to inspect the underlying statewide timelines, county margins and demographic comparisons for yourself.</p>
+            <a class="text-link" href="#explore">Take the wheel: explore the elections <span aria-hidden="true">↘</span></a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="office-figures" aria-labelledby="timeline-title">
+      <div class="office-figures-head"><p class="eyebrow"><span class="eyebrow-rule"></span> Across the ballot</p><h2 id="timeline-title">Different offices.<br><em>Different clocks.</em></h2><p>Separate, aligned views make the staggered shifts easier to see. Each bar is one decided race; the Senate panel separates the two seats, and where a runoff decided the seat it replaces the general-election result. The fixed colors identify the party that took office—there are no chart toggles to hide series.</p><div class="static-legend"><span><i class="swatch dem"></i>Democratic winner</span><span><i class="swatch rep"></i>Republican winner</span><span><i class="swatch other"></i>Third-party winner</span><span><i class="swatch unopposed"></i>No Republican nominee</span></div><p class="click-note" id="timeline-selection" aria-live="polite">Click a bar to load the nearest available presidential county map in Explore.</p></div>
+      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">01</span><div><p class="eyebrow">PRESIDENT</p><h3>The top of the ticket turns first</h3></div></div><div id="story-pres" class="chart office-chart" aria-label="Presidential Democratic minus Republican statewide margins by election"></div><figcaption class="graph-caption">Bars show the Democratic minus Republican share of the vote. The shaded area begins with the first Republican win.</figcaption></figure>
+      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">02</span><div><p class="eyebrow">GEORGIA VS. THE NATION</p><h3>How far did Georgia lean from the national result?</h3></div></div><div id="story-lean" class="chart office-chart office-chart-lean" aria-label="Georgia presidential Democratic margin minus national presidential Democratic margin"></div><figcaption class="graph-caption">Above zero: Georgia was more Democratic than the nation. Below zero: more Republican. The 1968 bar compares only Humphrey and Nixon, even though Wallace carried Georgia.</figcaption></figure>
+      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">03</span><div><p class="eyebrow">U.S. SENATE</p><h3>A long delay—and a seat-by-seat shift</h3></div></div><div id="story-senate" class="chart office-chart office-chart-senate" aria-label="U.S. Senate Democratic minus Republican margins by seat and election"></div><figcaption class="graph-caption">Where a runoff decided the seat, the bar shows the runoff. Light blue bars mark races with no Republican nominee.</figcaption></figure>
+      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">04</span><div><p class="eyebrow">GOVERNOR</p><h3>The final statewide office to flip</h3></div></div><div id="story-gov" class="chart office-chart" aria-label="Gubernatorial Democratic minus Republican margins by election"></div><figcaption class="graph-caption">The 1966 bar counts write-in candidate Ellis Arnall’s 7.1% as Democratic, since he ran in that year’s Democratic primary. Without his votes, Callaway led Maddox by 0.3 points.</figcaption></figure>
+    </section>
+
+    <section class="closing-note" aria-labelledby="close-title">
+      <p class="eyebrow"><span class="eyebrow-rule"></span> In brief</p><h2 id="close-title">The change came in stages.</h2>
+      <div class="takeaways">
+        <p><span>01</span><strong>Presidency, 1964</strong><br>Georgia’s first Republican presidential win in the project’s historical account.</p>
+        <p><span>02</span><strong>Senate, 1980 → 2004</strong><br>Mattingly broke through; by 2004, Republicans held both seats.</p>
+        <p><span>03</span><strong>Governor, 2002</strong><br>Perdue’s win brought a Republican into the governor’s office.</p>
+      </div>
+      <p class="closing-bridge">A statewide result is only the first layer. The county map and race controls below are open for your own reading.</p>
+    </section>
+
+    <section id="explore" class="explore-section" aria-labelledby="explore-title">
+      <div class="explore-head"><div><p class="eyebrow"><span class="eyebrow-rule"></span> Your turn</p><h2 id="explore-title">Explore the elections.</h2></div><p>Choose a presidential year, inspect county margins, and compare the statewide record across offices. Every value comes from the bundled project dataset.</p></div>
+      <div class="explore-controls" aria-label="Election exploration controls">
+        <div class="control-group"><label for="year-range">Presidential election year <strong id="year-label">2024</strong></label><div class="range-row"><button id="year-prev" class="icon-button" type="button" aria-label="Previous election year">←</button><input id="year-range" type="range" min="0" max="0" step="1" value="0"><button id="year-next" class="icon-button" type="button" aria-label="Next election year">→</button><button id="year-play" class="play-button" type="button" aria-label="Play through election years">Play</button></div></div>
+        <div class="control-group"><label for="map-metric">Map measure</label><select id="map-metric"><option value="margin">Presidential margin (D − R)</option><option value="white">White, non-Hispanic (%)</option><option value="black">Black, non-Hispanic (%)</option><option value="hisp">Hispanic (%)</option><option value="asian">Asian, non-Hispanic (%)</option><option value="old">Age 65+ (%)</option><option value="pop">Population</option></select></div>
+        <div class="control-group"><label for="office-select">Statewide office</label><select id="office-select"><option value="president">President</option><option value="senate">U.S. Senate</option><option value="governor">Governor</option></select></div>
+      </div>
+      <div class="explore-grid">
+        <div class="explore-map-panel"><div class="panel-head"><div><p class="eyebrow">COUNTY MAP</p><h3 id="explore-map-title">Presidential margin · 2024</h3></div><span class="panel-index">A</span></div><div id="explore-map" class="map-stage explore-map-stage" role="group" aria-label="Interactive Georgia county map"></div><div class="explore-legend"><span id="explore-low">Republican lead</span><i class="legend-gradient" id="explore-gradient"></i><span id="explore-high">Democratic lead</span></div><p id="explore-map-caption" class="rail-caption">Hover or keyboard-focus a county for details.</p></div>
+        <div class="explore-chart-panel"><div class="panel-head"><div><p class="eyebrow">STATEWIDE RESULTS</p><h3 id="office-chart-title">Presidential vote share</h3></div><span class="panel-index">B</span></div><div id="office-share-chart" class="chart chart-tall" aria-label="Statewide vote share chart"></div><div id="office-margin-chart" class="chart chart-short" aria-label="Statewide margin chart"></div><p id="office-source" class="source-note"></p></div>
+      </div>
+      <div class="scatter-panel"><div class="panel-head"><div><p class="eyebrow">COUNTY COMPARISON</p><h3>Margin alongside place</h3></div><span class="panel-index">C</span></div><div class="scatter-controls"><label for="scatter-metric">Compare margin with</label><select id="scatter-metric"><option value="black">Black, non-Hispanic (%)</option><option value="white">White, non-Hispanic (%)</option><option value="hisp">Hispanic (%)</option><option value="asian">Asian, non-Hispanic (%)</option><option value="old">Age 65+ (%)</option><option value="pop">Population</option></select><span id="scatter-snapshot" class="snapshot-note"></span></div><div id="county-scatter" class="chart chart-scatter" aria-label="Interactive scatterplot of county presidential margins and selected demographic measure"></div><p class="chart-caption">Each point is a county. Hover or focus a point to highlight the same county on the map. The relationship is descriptive, not causal.</p></div>
+      <details class="methodology"><summary>Sources, definitions &amp; limitations</summary><div class="method-body"><p><strong>County election results:</strong> The project dataset combines historical presidential county results. Statewide results and source notes are in the original project data. County margins are calculated as 100 × (Democratic votes − Republican votes) ÷ total votes, matching the source array structure.</p><p><strong>Demographics:</strong> County population estimates in the bundled data are for 2000, 2010 and 2019. For a selected election year, the nearest available snapshot is shown and labeled; years before 2000 use the earliest snapshot.</p><p><strong>Statewide results:</strong> See the original dashboard's source notes preserved in <code>README.md</code> and the metadata embedded in <code>data.js</code>. Special elections/runoffs appear as their own records where supplied. In selected historical races, party, write-in, third-party or legislative-selection details make the two-party margin an incomplete description.</p><p><strong>Survey file:</strong> The attached standardized exit-poll/survey CSV is retained with the project, but the original dashboard did not make a demographic voting analysis from it. It is not used here to infer county behavior or causal effects.</p></div></details>
+      <p id="load-error" class="load-error" hidden role="alert">The election data could not be loaded. Try opening this page from the project folder and check that the local data files are present.</p>
+    </section>
+
+    <footer class="site-footer"><a class="masthead" href="#top">Georgia Elections <span>Dashboard</span></a><p>Built from the supplied Georgia elections project data. Interactive graphics are for exploration; read source notes and caveats alongside the charts.</p><a href="#top">Back to top ↑</a></footer>
+  </main>
+  <div class="county-tooltip" id="county-tooltip" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
