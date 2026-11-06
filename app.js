@@ -17,6 +17,10 @@
   const mapCounties = new Map();
   const svgNS = 'http://www.w3.org/2000/svg';
   let activeCounty = null;
+  let brushedCounties = new Set();
+  let suppressMapClick = false;
+  let suppressScatterClick = false;
+  let mapBrushDragging = false;
   let exploreYear = 2024;
   let countyElectionYears=[];
   let mapMetric = 'margin';
@@ -78,33 +82,191 @@
     if (!container) return;
     const svg=svgEl('svg',{viewBox:'0 0 540 455',preserveAspectRatio:'xMidYMid meet',role:'group','aria-label':'Georgia county map','focusable':'false'});
     const paths=new Map();
+    const brushable=containerId==='explore-map';
     features.forEach(f=>{
       const id=String(f.id), county=mapCounties.get(id);
       const p=svgEl('path',{d:pathFor(f.geometry,project),class:'county','data-county':id,'fill-rule':'evenodd',tabindex:'0',role:'img','aria-label':county});
-      p.addEventListener('pointerenter',ev=>{setHighlight(id);showCountyTip(containerId,id,ev);});
-      p.addEventListener('pointermove',ev=>showCountyTip(containerId,id,ev));
+      p.addEventListener('pointerenter',ev=>{
+        if(brushable&&mapBrushDragging) return;
+        setHighlight(id);showCountyTip(containerId,id,ev);
+      });
+      p.addEventListener('pointermove',ev=>{
+        if(brushable&&mapBrushDragging){hideTip();return;}
+        showCountyTip(containerId,id,ev);
+      });
       p.addEventListener('pointerleave',()=>{if(document.activeElement!==p){setHighlight(null);hideTip();}});
-      p.addEventListener('focus',()=>{setHighlight(id);showCountyTip(containerId,id,null);});
+      p.addEventListener('focus',()=>{
+        if(brushable&&mapBrushDragging) return;
+        setHighlight(id);showCountyTip(containerId,id,null);
+      });
       p.addEventListener('blur',()=>{setHighlight(null);hideTip();});
-      p.addEventListener('keydown',ev=>{if(ev.key==='Escape'){p.blur();hideTip();}});
+      p.addEventListener('keydown',ev=>{
+        if(ev.key==='Escape'){p.blur();hideTip();if(brushable&&brushedCounties.size)clearBrush();}
+        if(brushable&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();toggleBrushedCounty(id);}
+      });
+      if(brushable) p.addEventListener('click',ev=>{
+        if(suppressMapClick){ev.preventDefault();ev.stopPropagation();return;}
+        toggleBrushedCounty(id);
+      });
       svg.appendChild(p); paths.set(id,p);
     });
     container.replaceChildren(svg);
-    mapViews.set(containerId,{container,svg,paths,values:{},kind:'margin',year:2024,demographicYear:null});
+    const view={container,svg,paths,values:{},kind:'margin',year:2024,demographicYear:null};
+    mapViews.set(containerId,view);
+    if(brushable) enableMapBoxBrush(view);
+  }
+  function svgEventPoint(svg, ev){
+    const pt=svg.createSVGPoint();
+    pt.x=ev.clientX; pt.y=ev.clientY;
+    const ctm=svg.getScreenCTM();
+    return ctm ? pt.matrixTransform(ctm.inverse()) : {x:0,y:0};
+  }
+  // Select only counties whose full shape fits inside the box (bbox containment ⇒ geometry containment).
+  function countiesEnclosedByBox(view, x0, y0, x1, y1){
+    const left=Math.min(x0,x1), right=Math.max(x0,x1), top=Math.min(y0,y1), bottom=Math.max(y0,y1);
+    const selected=[];
+    view.paths.forEach((p,id)=>{
+      const b=p.getBBox();
+      if(b.x>=left && b.y>=top && b.x+b.width<=right && b.y+b.height<=bottom) selected.push(id);
+    });
+    return selected;
+  }
+  function enableMapBoxBrush(view){
+    const svg=view.svg;
+    svg.classList.add('map-brushable');
+    const rubber=svgEl('rect',{class:'map-brush-rect',fill:'rgba(207,155,60,.22)',stroke:'#cf9b3c','stroke-width':'1.5','pointer-events':'none',visibility:'hidden'});
+    svg.appendChild(rubber);
+    let dragging=false, moved=false, start=null, pointerId=null;
+    svg.addEventListener('pointerdown',ev=>{
+      if(ev.button!==0) return;
+      // Delay setPointerCapture until a real drag so county clicks still fire once.
+      dragging=true; moved=false; start=svgEventPoint(svg,ev); pointerId=ev.pointerId;
+      mapBrushDragging=true;
+      hideTip();
+      setHighlight(null);
+    });
+    svg.addEventListener('pointermove',ev=>{
+      if(!dragging||!start) return;
+      hideTip();
+      const cur=svgEventPoint(svg,ev);
+      if(!moved && Math.hypot(cur.x-start.x,cur.y-start.y)<5) return;
+      if(!moved){
+        moved=true;
+        try{svg.setPointerCapture(pointerId??ev.pointerId);}catch(_){/* Capture optional. */}
+      }
+      const x=Math.min(start.x,cur.x), y=Math.min(start.y,cur.y);
+      rubber.setAttribute('x',x); rubber.setAttribute('y',y);
+      rubber.setAttribute('width',Math.abs(cur.x-start.x)); rubber.setAttribute('height',Math.abs(cur.y-start.y));
+      rubber.setAttribute('visibility','visible');
+      setHighlight(null);
+    });
+    const endDrag=ev=>{
+      if(!dragging) return;
+      dragging=false;
+      mapBrushDragging=false;
+      try{svg.releasePointerCapture(ev.pointerId);}catch(_){/* Capture optional. */}
+      rubber.setAttribute('visibility','hidden');
+      hideTip();
+      setHighlight(null);
+      if(!moved){
+        // Plain click: path click listener toggles selection (no capture was taken).
+        start=null; pointerId=null; moved=false;
+        return;
+      }
+      suppressMapClick=true;
+      window.setTimeout(()=>{suppressMapClick=false;},0);
+      const cur=svgEventPoint(svg,ev);
+      const ids=countiesEnclosedByBox(view,start.x,start.y,cur.x,cur.y);
+      if(ev.shiftKey){
+        ids.forEach(id=>brushedCounties.add(id));
+        applyBrush();
+      } else {
+        setBrushedCounties(ids);
+      }
+      start=null; pointerId=null; moved=false;
+    };
+    svg.addEventListener('pointerup',endDrag);
+    svg.addEventListener('pointercancel',endDrag);
   }
   function setHighlight(id, source='map') {
     activeCounty=id;
     mapViews.forEach(view=>view.paths.forEach((p,cid)=>p.classList.toggle('is-highlighted',id!==null&&cid===id)));
     const focus=document.getElementById('rail-focus');
     if(focus) focus.innerHTML=id?`<span class="focus-dot"></span><span>${escapeHTML(mapCounties.get(id)||'County')} selected · linked views highlighted.</span>`:'<span class="focus-dot"></span><span>Hover or focus a county to inspect its margin.</span>';
+    // Persistent brush owns scatter selectedpoints; hover only previews when nothing is brushed.
+    if(brushedCounties.size) return;
     const scatter=document.getElementById('county-scatter');
     if(!(source==='scatter'&&id!==null)&&scatter?.data?.[0]?.customdata){
       const index=id?scatter.data[0].customdata.findIndex(v=>String(v)===id):-1;
       try{Plotly.restyle(scatter,{selectedpoints:[index>=0?[index]:null]});}catch(_){/* Scatter may not have rendered yet. */}
     }
   }
+  function toggleBrushedCounty(id){
+    id=String(id);
+    if(brushedCounties.has(id)) brushedCounties.delete(id);
+    else brushedCounties.add(id);
+    applyBrush();
+    // Drop temporary hover/focus outlines so only gold selection strokes remain.
+    setHighlight(null);
+    hideTip();
+    const path=mapViews.get('explore-map')?.paths.get(id);
+    if(path&&document.activeElement===path) path.blur();
+  }
+  function setBrushedCounties(ids){
+    brushedCounties=new Set((ids||[]).map(String).filter(Boolean));
+    applyBrush();
+  }
+  function clearScatterSelectionUI(){
+    const scatter=document.getElementById('county-scatter');
+    if(!scatter?.layout) return;
+    // Plotly stores the persistent box in layout.selections; clearing it also drops outline handles.
+    try{Plotly.relayout(scatter,{selections:[]});}catch(_){/* Scatter may not have rendered yet. */}
+    scatter.querySelectorAll('.select-outline,.outline-controllers').forEach(el=>el.remove());
+  }
+  function clearBrush(){
+    brushedCounties.clear();
+    clearScatterSelectionUI();
+    applyBrush();
+  }
+  function applyBrush(){
+    const brushing=brushedCounties.size>0;
+    const explore=mapViews.get('explore-map');
+    if(explore){
+      explore.paths.forEach((p,cid)=>{
+        p.classList.toggle('is-brushed',brushing&&brushedCounties.has(cid));
+        p.classList.toggle('is-dimmed',brushing&&!brushedCounties.has(cid));
+      });
+    }
+    const scatter=document.getElementById('county-scatter');
+    if(scatter?.data?.[0]?.customdata){
+      const ids=scatter.data[0].customdata.map(String);
+      const indexes=brushing?ids.reduce((acc,id,i)=>{if(brushedCounties.has(id))acc.push(i);return acc;},[]):null;
+      try{
+        if(!brushing){
+          clearScatterSelectionUI();
+          Plotly.restyle(scatter,{selectedpoints:[null]});
+        } else {
+          Plotly.restyle(scatter,{selectedpoints:[indexes]});
+        }
+      }catch(_){/* Scatter may not have rendered yet. */}
+    }
+    const status=document.getElementById('brush-status');
+    const clearBtn=document.getElementById('brush-clear');
+    const toolbar=document.getElementById('brush-toolbar');
+    if(toolbar) toolbar.classList.toggle('has-selection',brushing);
+    if(status){
+      if(!brushing) status.textContent='No counties selected. Drag a box on the map or scatterplot to select counties in both views. Click a county in either view to add or remove it. Hold Shift while boxing to add to the current selection.';
+      else {
+        const names=[...brushedCounties].slice(0,3).map(id=>mapCounties.get(id)||id);
+        const extra=brushedCounties.size>3?` and ${brushedCounties.size-3} more`:'';
+        status.textContent=`${brushedCounties.size} count${brushedCounties.size===1?'y':'ies'} selected${names.length?` (${names.join(', ')}${extra})`:''} — linked on both the map and the scatterplot.`;
+      }
+    }
+    if(clearBtn) clearBtn.hidden=!brushing;
+  }
   function escapeHTML(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
   function showCountyTip(viewId,id,ev) {
+    if(viewId==='explore-map'&&mapBrushDragging){hideTip();return;}
     const view=mapViews.get(viewId), county=mapCounties.get(id)||'County';
     const year=view.year||exploreYear, record=GA.county[String(year)]?.[id];
     let text=county;
@@ -207,7 +369,7 @@
     });
     const title=metric==='margin'?`Presidential margin · ${year}`:`${metricInfo.name} · ${demoYear}`;
     document.getElementById('explore-map-title').textContent=title;
-    document.getElementById('explore-map-caption').textContent=metric==='margin'?`Margin is calculated as Democratic votes minus Republican votes, divided by total votes, for ${year}. Hover or keyboard-focus a county for candidate totals.`:`Nearest demographic snapshot: ${demoYear}${year<2000?' (earliest available)':''}. The map and election year refer to different datasets.`;
+    document.getElementById('explore-map-caption').textContent=metric==='margin'?`Margin is calculated as Democratic votes minus Republican votes, divided by total votes, for ${year}. Drag a box to select counties fully inside it; click to add or remove one. Selection is linked with the scatterplot.`:`Nearest demographic snapshot: ${demoYear}${year<2000?' (earliest available)':''}. The map and election year refer to different datasets. Drag a box or click counties to link a selection with the scatterplot.`;
     document.getElementById('explore-low').textContent=metric==='margin'?'Republican lead':`Lower ${metricInfo.unit==='people'?'population':'share'}`;
     document.getElementById('explore-high').textContent=metric==='margin'?'Democratic lead':`Higher ${metricInfo.unit==='people'?'population':'share'}`;
     const grad=document.getElementById('explore-gradient');grad.style.background=metric==='margin'?'linear-gradient(90deg,#bd4a37,#f3f0e8,#326c86)':`linear-gradient(90deg,${DEMO_STOPS.join(',')})`;
@@ -265,6 +427,7 @@
     document.getElementById('map-metric').addEventListener('change',ev=>{mapMetric=ev.target.value;renderExploreMap();});
     document.getElementById('office-select').addEventListener('change',renderExploreCharts);
     document.getElementById('scatter-metric').addEventListener('change',ev=>{scatterMetric=ev.target.value;renderScatter();});
+    document.getElementById('brush-clear')?.addEventListener('click',clearBrush);
   }
   function stopYearPlay(){
     if(yearTimer!==null){window.clearInterval(yearTimer);yearTimer=null;}
@@ -331,10 +494,12 @@
     return [Math.min(...years)-3,Math.max(...years)+3];
   }
   function bindYearSelection(plot){
+    if(plot.dataset.yearBound) return;
     plot.on('plotly_click',ev=>{
       const point=ev.points?.[0], year=Number(point?.x);
-      if(Number.isFinite(year))setExploreYear(Math.round(year));
+      if(Number.isFinite(year)) setExploreYear(Math.round(year));
     });
+    plot.dataset.yearBound='true';
   }
   function renderWinnerTiles(xRange){
     const rows=STORY_ROWS.map(([key,label])=>({key,label,races:key==='class2'||key==='class3'?storyRaces('senate').filter(g=>g.seat===key):storyRaces(key)}));
@@ -480,14 +645,49 @@
     document.getElementById('scatter-snapshot').textContent=`Election: ${y} · nearest demographic snapshot: ${demoYear}`;
     const xs=ids.map(id=>demo[id][metric.index]),margins=ids.map(id=>margin(county[id]));
     const pop=metric.index===0;
-    Plotly.react('county-scatter',[{type:'scatter',mode:'markers',x:xs,y:margins,text:ids.map(id=>mapCounties.get(id)),customdata:ids,marker:{size:9,color:margins.map(m=>marginColor(m)),line:{color:'#d8ded6',width:.7},opacity:.87},selected:{marker:{size:14,opacity:1,line:{color:GOLD,width:2}}},unselected:{marker:{opacity:.22}},hovertemplate:'%{text}<br>'+metric.name+': %{x}<br>Presidential margin: %{y:+.1f} pts<extra></extra>'}],{
+    const selectedIdx=brushedCounties.size?ids.reduce((acc,id,i)=>{if(brushedCounties.has(id))acc.push(i);return acc;},[]):undefined;
+    Plotly.react('county-scatter',[{type:'scatter',mode:'markers',x:xs,y:margins,text:ids.map(id=>mapCounties.get(id)),customdata:ids,
+      selectedpoints:selectedIdx,
+      marker:{size:9,color:margins.map(m=>marginColor(m)),line:{color:'#d8ded6',width:.7},opacity:.87},
+      selected:{marker:{size:14,opacity:1,line:{color:GOLD,width:2}}},unselected:{marker:{opacity:.2}},
+      hovertemplate:'%{text}<br>'+metric.name+': %{x}<br>Presidential margin: %{y:+.1f} pts<extra></extra>'}],{
       margin:{l:62,r:20,t:20,b:55},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'DM Sans, Arial, sans-serif',color:'#c9d0c8',size:10},showlegend:false,
+      // clickmode event: point clicks toggle via plotly_click (no Plotly replace-selection / Ctrl required).
+      dragmode:'select',selectdirection:'any',clickmode:'event',
       xaxis:{title:metric.name+(pop?' (log scale)':' (%)'),type:pop?'log':'linear',gridcolor:'#43524c',color:'#c9d0c8'},yaxis:{title:'Presidential margin (D − R, points)',zeroline:true,zerolinecolor:'#9da89e',gridcolor:'#43524c',color:'#c9d0c8'},hoverlabel:{bgcolor:'#172320',font:{color:'#f6f1e8'}}
-    },{responsive:true,displayModeBar:false}).then(()=>{if(activeCounty)setHighlight(activeCounty);});
+    },{responsive:true,displayModeBar:false}).then(()=>{
+      applyBrush();
+      if(activeCounty&&!brushedCounties.size)setHighlight(activeCounty);
+    });
     const plot=document.getElementById('county-scatter');
     if(!plot.dataset.linked){
+      let scatterBoxSelecting=false;
       plot.on('plotly_hover',ev=>{const id=String(ev.points?.[0]?.customdata||'');if(id)setHighlight(id,'scatter');});
-      plot.on('plotly_unhover',()=>setHighlight(null,'scatter'));plot.dataset.linked='true';
+      plot.on('plotly_unhover',()=>setHighlight(null,'scatter'));
+      plot.on('plotly_click',ev=>{
+        if(suppressScatterClick) return;
+        const id=String(ev.points?.[0]?.customdata||'');
+        if(id) toggleBrushedCounty(id);
+      });
+      plot.on('plotly_selecting',()=>{scatterBoxSelecting=true;});
+      plot.on('plotly_selected',ev=>{
+        // Ignore click-driven selection events; only box/lasso drags replace or shift-add.
+        if(!scatterBoxSelecting){applyBrush();return;}
+        scatterBoxSelecting=false;
+        suppressScatterClick=true;
+        window.setTimeout(()=>{suppressScatterClick=false;},0);
+        const pts=ev?.points||[];
+        if(!pts.length){clearBrush();return;}
+        const ids=pts.map(p=>String(p.customdata||'')).filter(Boolean);
+        if(ev?.event?.shiftKey){
+          ids.forEach(id=>brushedCounties.add(id));
+          applyBrush();
+        } else {
+          setBrushedCounties(ids);
+        }
+      });
+      plot.on('plotly_deselect',()=>{scatterBoxSelecting=false;clearBrush();});
+      plot.dataset.linked='true';
     }
   }
   function bindResize(){
