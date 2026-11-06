@@ -43,6 +43,7 @@
       <div class="hero-art" aria-label="Georgia county map showing presidential margin in 1964">
         <div class="hero-art-top"><span>THE FIRST BREAK</span><span>1964 · PRESIDENT</span></div>
         <div id="hero-map" class="map-stage map-stage-hero" role="group" aria-label="Interactive Georgia county map, presidential margin in 1964"></div>
+        <div class="hero-map-legend" aria-label="County margin map colors"><span>Republican lead</span><i class="legend-gradient" aria-hidden="true"></i><span>Democratic lead</span></div>
         <div class="hero-art-bottom"><strong>54.1%</strong><span>Goldwater’s share<br>of Georgia’s two-party vote</span><i class="mini-rule"></i><span class="hero-map-note">COUNTY MARGINS<br>1964</span></div>
         <div class="hero-stamp" aria-hidden="true">THE<br>TURN</div>
       </div>
@@ -115,21 +116,55 @@
     </section>
 
     <section class="office-figures" aria-labelledby="timeline-title">
-      <div class="office-figures-head"><p class="eyebrow"><span class="eyebrow-rule"></span> Across the ballot</p><h2 id="timeline-title">Different offices.<br><em>Different clocks.</em></h2><p>Separate, aligned views make the staggered shifts easier to see. Each bar is one decided race; the Senate panel separates the two seats, and where a runoff decided the seat it replaces the general-election result. The fixed colors identify the party that took office—there are no chart toggles to hide series.</p><div class="static-legend"><span><i class="swatch dem"></i>Democratic winner</span><span><i class="swatch rep"></i>Republican winner</span><span><i class="swatch other"></i>Third-party winner</span><span><i class="swatch unopposed"></i>No Republican nominee</span></div><p class="click-note" id="timeline-selection" aria-live="polite">Click a bar to load the nearest available presidential county map in Explore.</p></div>
-      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">01</span><div><p class="eyebrow">PRESIDENT</p><h3>The top of the ticket turns first</h3></div></div><div id="story-pres" class="chart office-chart" aria-label="Presidential Democratic minus Republican statewide margins by election"></div><figcaption class="graph-caption">Bars show the Democratic minus Republican share of the vote. The shaded area begins with the first Republican win.</figcaption></figure>
-      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">02</span><div><p class="eyebrow">GEORGIA VS. THE NATION</p><h3>How far did Georgia lean from the national result?</h3></div></div><div id="story-lean" class="chart office-chart office-chart-lean" aria-label="Georgia presidential Democratic margin minus national presidential Democratic margin"></div><figcaption class="graph-caption">Above zero: Georgia was more Democratic than the nation. Below zero: more Republican. The 1968 bar compares only Humphrey and Nixon, even though Wallace carried Georgia.</figcaption></figure>
-      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">03</span><div><p class="eyebrow">U.S. SENATE</p><h3>A long delay—and a seat-by-seat shift</h3></div></div><div id="story-senate" class="chart office-chart office-chart-senate" aria-label="U.S. Senate Democratic minus Republican margins by seat and election"></div><figcaption class="graph-caption">Where a runoff decided the seat, the bar shows the runoff. Light blue bars mark races with no Republican nominee.</figcaption></figure>
-      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">04</span><div><p class="eyebrow">GOVERNOR</p><h3>The final statewide office to flip</h3></div></div><div id="story-gov" class="chart office-chart" aria-label="Gubernatorial Democratic minus Republican margins by election"></div><figcaption class="graph-caption">The 1966 bar counts write-in candidate Ellis Arnall’s 7.1% as Democratic, since he ran in that year’s Democratic primary. Without his votes, Callaway led Maddox by 0.3 points.</figcaption></figure>
+      <div class="office-figures-head">
+        <p class="eyebrow"><span class="eyebrow-rule"></span> Across the ballot</p>
+        <h2 id="timeline-title">Different offices.<br><em>Different clocks.</em></h2>
+        <p>Three linked views reveal the staggered shift. The presidential chart measures Georgia against the national margin; Senate and governor charts show statewide Democratic-minus-Republican margins. Hover a year to compare the charts, or click to keep it selected. Not every office held an election in every year.</p>
+        <div class="static-legend" aria-label="Chart color key"><span><i class="swatch dem"></i>Democratic / more Democratic</span><span><i class="swatch rep"></i>Republican / more Republican</span><span><i class="swatch other"></i>Third-party winner</span><span><i class="swatch unopposed"></i>No Republican nominee</span></div>
+      </div>
+
+      <div class="linked-year-panel" aria-label="Linked comparison controls">
+        <div class="linked-year-heading">
+          <div><p class="eyebrow">CONNECTED ELECTION YEARS</p><h3 id="linked-year-title">Compare across offices</h3></div>
+          <div class="linked-year-actions" aria-label="Choose a year to compare">
+            <button class="year-chip" type="button" data-compare-year="1964" aria-pressed="false">1964</button>
+            <button class="year-chip" type="button" data-compare-year="1980" aria-pressed="false">1980</button>
+            <button class="year-chip" type="button" data-compare-year="2002" aria-pressed="false">2002</button>
+            <button class="year-chip" type="button" data-compare-year="2020" aria-pressed="false">2020</button>
+            <button id="linked-year-clear" class="year-chip year-chip-clear" type="button" hidden>Clear</button>
+          </div>
+        </div>
+        <p class="linked-year-instruction" id="timeline-selection" aria-live="polite">Hover a bar in any of the three charts to preview that election year. Click a bar or year button to pin it. Gold bands mark matching years where that office has data.</p>
+        <div class="year-summary-grid" id="year-summary" aria-label="Year-by-year comparison" aria-live="polite">
+          <div class="summary-card"><span>President · GA vs. U.S.</span><strong id="summary-president-value">—</strong><p id="summary-president-detail">Choose a year to compare.</p></div>
+          <div class="summary-card"><span>U.S. Senate · Georgia</span><strong id="summary-senate-value">—</strong><p id="summary-senate-detail">Only recorded races appear.</p></div>
+          <div class="summary-card"><span>Governor · Georgia</span><strong id="summary-governor-value">—</strong><p id="summary-governor-detail">Not every year has a race.</p></div>
+        </div>
+      </div>
+
+      <figure class="office-figure office-figure-featured"><div class="figure-heading"><span class="figure-index">01</span><div><p class="eyebrow">GEORGIA VS. THE NATION · PRESIDENT</p><h3>How far did Georgia lean from the national result?</h3></div></div><div id="story-lean" class="chart office-chart office-chart-lean" aria-label="Georgia presidential Democratic margin minus national presidential Democratic margin by year"></div><figcaption class="graph-caption">Above zero: Georgia was more Democratic than the country; below zero: more Republican. <strong>Hover to see Georgia’s actual D − R margin</strong> as well as the national margin. The 1968 bar compares Humphrey and Nixon, although Wallace carried Georgia.</figcaption></figure>
+      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">02</span><div><p class="eyebrow">U.S. SENATE</p><h3>A long delay—and a seat-by-seat shift</h3></div></div><div id="story-senate" class="chart office-chart office-chart-senate" aria-label="U.S. Senate Democratic minus Republican margins by seat and election"></div><figcaption class="graph-caption">Where a runoff decided the seat, the bar shows the runoff. Light blue bars mark races with no Republican nominee. A year with two Senate races may show two bars.</figcaption></figure>
+      <figure class="office-figure"><div class="figure-heading"><span class="figure-index">03</span><div><p class="eyebrow">GOVERNOR</p><h3>The final statewide office to flip</h3></div></div><div id="story-gov" class="chart office-chart" aria-label="Gubernatorial Democratic minus Republican margins by election"></div><figcaption class="graph-caption">The 1966 bar counts write-in candidate Ellis Arnall’s 7.1% as Democratic, since he ran in that year’s Democratic primary. Without his votes, Callaway led Maddox by 0.3 points.</figcaption></figure>
     </section>
 
     <section class="closing-note" aria-labelledby="close-title">
-      <p class="eyebrow"><span class="eyebrow-rule"></span> In brief</p><h2 id="close-title">The change came in stages.</h2>
-      <div class="takeaways">
-        <p><span>01</span><strong>Presidency, 1964</strong><br>Georgia’s first Republican presidential win in the project’s historical account.</p>
-        <p><span>02</span><strong>Senate, 1980 → 2004</strong><br>Mattingly broke through; by 2004, Republicans held both seats.</p>
-        <p><span>03</span><strong>Governor, 2002</strong><br>Perdue’s win brought a Republican into the governor’s office.</p>
+      <p class="eyebrow"><span class="eyebrow-rule"></span> In brief · an interactive timeline</p>
+      <h2 id="close-title">The change came in stages.</h2>
+      <p class="milestone-intro">Watch the three breakthroughs unfold, then choose any milestone to see what changed—and why the transitions were not simultaneous.</p>
+      <div class="milestone-experience" id="milestone-experience">
+        <div class="milestone-actions"><span class="milestone-status" id="milestone-status">Select a year to explore the shift</span><button id="milestone-replay" class="milestone-replay" type="button" aria-label="Replay the three milestones">▶ Replay timeline</button></div>
+        <div class="milestone-track" role="group" aria-label="Republican breakthrough milestones">
+          <div class="milestone-rail" aria-hidden="true"><span id="milestone-rail-fill"></span></div>
+          <button type="button" class="milestone-button is-current" data-milestone="0" aria-pressed="true"><span class="milestone-dot" aria-hidden="true"></span><span class="milestone-year">1964</span><span class="milestone-office">Presidency</span></button>
+          <button type="button" class="milestone-button" data-milestone="1" aria-pressed="false"><span class="milestone-dot" aria-hidden="true"></span><span class="milestone-year">1980</span><span class="milestone-office">U.S. Senate</span></button>
+          <button type="button" class="milestone-button" data-milestone="2" aria-pressed="false"><span class="milestone-dot" aria-hidden="true"></span><span class="milestone-year">2002</span><span class="milestone-office">Governor</span></button>
+        </div>
+        <div class="milestone-detail" id="milestone-detail" aria-live="polite" aria-label="Selected milestone details">
+          <div class="milestone-detail-number" id="milestone-detail-year">1964</div>
+          <div class="milestone-detail-copy"><span class="eyebrow" id="milestone-detail-label">THE FIRST BREAK · PRESIDENT</span><h3 id="milestone-detail-title">Goldwater carries Georgia.</h3><p id="milestone-detail-description">Georgia backs Republican Barry Goldwater for president, marking an early break from its longstanding Democratic presidential voting pattern. The other statewide offices do not switch with it.</p><button id="milestone-compare" class="milestone-compare" type="button">Compare 1964 in the linked charts <span aria-hidden="true">↗</span></button></div>
+        </div>
       </div>
-      <p class="closing-bridge">A statewide result is only the first layer. The county map and race controls below are open for your own reading.</p>
+      <p class="closing-bridge">Each milestone is a breakthrough, not an uninterrupted party takeover. Explore the data below to see how places and elections varied.</p>
     </section>
 
     <section id="explore" class="explore-section" aria-labelledby="explore-title">

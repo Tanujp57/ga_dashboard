@@ -28,8 +28,8 @@ If your browser blocks local files, use a simple static file server from this fo
 
 - Reframed the opening as a long-form feature and the core story as five scroll-activated chapters.
 - Added a persistent Georgia county map that changes year and measure with the active chapter, plus a 1960–64 county margin-swing view.
-- Restored the statewide winner-square timeline near the top of the story, the Georgia-minus-national presidential margin chart, and the original chart captions and annotations.
-- Reworked office comparisons into separate, aligned statewide margin charts with fixed legends and no confusing hide/show toggles. Senate races are grouped by seat; the runoff result supersedes the general-election result, while same-year seat decisions are offset for readability. The 1966 gubernatorial Democratic comparison includes Ellis Arnall’s write-in share, with the calculation disclosed in the tooltip and caption.
+- Preserved the statewide winner-square timeline near the top of the story and kept only the Georgia-minus-national presidential margin chart (the duplicate raw presidential-margin chart was removed). The relative-margin chart includes annotated turning points and hover details for Georgia’s actual margin.
+- Reworked office comparisons into three linked statewide margin charts with fixed legends and no confusing hide/show toggles. Senate races are grouped by seat; the runoff result supersedes the general-election result, while same-year seat decisions are offset for readability. The 1966 gubernatorial Democratic comparison includes Ellis Arnall’s write-in share, with the calculation disclosed in the tooltip and caption.
 - Added linked county hover/focus highlighting, accessible county details, keyboard-operable year controls, responsive chapter navigation, and a direct exploration section.
 - Preserved the original statewide vote-share and margin charts, county election data, demographic map measures, and county-versus-demographic scatterplot.
 - Kept the source records intact. Margins and Goldwater's two-party share are calculated from supplied data at runtime; no new election results are introduced.
@@ -48,10 +48,25 @@ County presidential margin is `100 × (Democratic votes − Republican votes) ÷
 
 The project originally supplied only a short run instruction in `README.txt`; no separate process book was present among the attached files.
 
+## Readability and legend update (November 2026)
+
+- Increased body-copy, annotations, captions, control labels, tooltips and Plotly chart text, with mobile overrides.
+- Added in-chart legends to the winner timeline and statewide margin charts, and preserved the party-series legend on vote-share plots. Legend clicks are disabled so comparing figures does not accidentally hide categories.
+- Split Georgia-versus-U.S. bars into labeled red/blue series (more Republican/more Democratic relative to the nation). Added a separate red/blue D-versus-R margin legend for the Explore statewide chart.
+- Added a labeled continuous D-minus-R color scale to the county scatterplot, plus a color legend to the opening map. The story and Explore county maps already have gradient legends.
+- Gave charts more height and room for legible legends. No data changes were made.
+
+## Linked charts and milestone timeline (November 2026)
+
+- **Consolidation:** The raw presidential-margin graph in the three-office section was removed. The Georgia-versus-national presidential-margin chart is the sole presidential chart in that section. Hover its bars for Georgia's actual Democratic-minus-Republican margin, the national margin, and the difference between them. Major turning points (1964, the Carter years, 2020) are annotated.
+- **Linked year comparison:** Hover a presidential, Senate, or gubernatorial bar to preview that election year in all three charts. A gold band marks the same year *only in panels that have a result for that year*. Click any bar to pin a year; select a year chip to pin one of the featured years (1964, 1980, 2002, 2020), or use **Clear**. The summary reports each office's available result and explicitly identifies years without a recorded race. Choosing a year also sets the Explore map to its nearest available **presidential county-election** year; it does not invent county Senate or governor results.
+- **Animated milestones:** The three-stage timeline under “The change came in stages” advances from presidency (1964) through Senate (1980) to governor (2002). It automatically plays once when scrolled into view, can be replayed, and offers three clickable year milestones with their own explanatory text. Use **Compare [year] in the linked charts** to select that same year in the chart comparison and scroll back to it. When reduced-motion is requested, the automatic animation is disabled and the milestone buttons continue to work.
+- All changes are in `index.html`, `styles.css`, and `app.js`. Original data scripts, geometry and survey CSV remain unchanged.
+
 ## Testing and limitations
 
 - Verified JavaScript syntax and local asset references during implementation; the app contains no remote data dependencies. Google Fonts are an optional stylesheet import; local fallbacks are defined for offline/preview use.
-- This environment did not provide an interactive real-browser session for end-to-end inspection. Scroll-trigger behavior, browser-specific local-file restrictions, and assistive-technology announcements therefore need final confirmation in the target browser.
+- Tested with Chromium using local embedded scripts and styles: all seven Plotly graphs rendered, all office-chart legends appeared, the linked selection worked across charts, the stage controls updated their explanatory text, and the existing Explore graph still rendered. No page-level JavaScript errors were observed. The tested desktop (1440 px) and mobile (390 px) viewport widths had no horizontal overflow. Browser navigation via localhost was restricted in the test environment, so testing used an equivalent in-memory page with the same bundled assets and without the optional Google Fonts import.
 - The county map displays **presidential** county results only. It intentionally does not imply county-level Senate or governor outcomes.
 - Demographic snapshots are limited to 2000, 2010 and 2019. Survey CSV data is retained but not integrated into charts.
 - A few historical outcomes have special context (third-party winners, runoffs, write-ins, unopposed races, or legislative selection). Hover text and the story explain key caveats, but a two-party margin does not fully represent every such contest.

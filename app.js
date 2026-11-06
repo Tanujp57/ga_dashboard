@@ -27,6 +27,13 @@
   let scatterMetric = 'black';
   let resizeObserver;
   let yearTimer=null;
+  const LINKED_CHARTS=['story-lean','story-senate','story-gov'];
+  const linkedYearSets=new Map();
+  const linkedBaseShapes=new Map();
+  let pinnedStoryYear=null, hoveredStoryYear=null;
+  let paintedStoryYear=null;
+  let storyYearPaintToken=0;
+  const noData='No election in this dataset for this year.';
   const tooltip = document.getElementById('county-tooltip');
 
   function init() {
@@ -47,6 +54,8 @@
     renderStoryMap(1964, 'margin');
     renderExploreMap();
     renderStoryPlots();
+    setupMilestones();
+    setupLinkedYears();
     updateStoryFacts();
     renderExploreCharts();
     bindResize();
@@ -442,7 +451,6 @@
     slider.value=String(countyElectionYears.indexOf(exploreYear));
     document.getElementById('year-label').textContent=exploreYear;
     renderExploreMap();renderScatter();
-    document.getElementById('timeline-selection').textContent=` Selected ${year}; county map set to ${exploreYear}.`;
   }
   const STORY_ROWS=[['president','President'],['class3','Senate: Class 3 seat'],['class2','Senate: Class 2 seat'],['governor','Governor']];
   const STORY_CATS={
@@ -450,6 +458,15 @@
     unopposed:{name:'Democrat, no Republican nominee',color:'#90b4e0'},missing:{name:'Vote totals not in dataset',color:'#a0aec0'}
   };
   const STORY_OPTIONS={responsive:true,displayModeBar:false,scrollZoom:false};
+  // Every Plotly chart owns a legend. Keep color semantics consistent and prevent
+  // accidental hiding of a category when comparing figures across offices.
+  const LEGEND_LIGHT={orientation:'h',x:0,y:-.29,xanchor:'left',yanchor:'top',
+    font:{family:'DM Sans, Arial, sans-serif',size:12,color:'#35413c'},
+    itemclick:false,itemdoubleclick:false};
+  const LEGEND_DARK={orientation:'h',x:0,y:-.32,xanchor:'left',yanchor:'top',
+    font:{family:'DM Sans, Arial, sans-serif',size:12,color:'#e2e9dd'},
+    itemclick:false,itemdoubleclick:false};
+  const PLOT_FONT=12;
   const formatMargin=m=>m===0?'even':(m>0?'D +':'R +')+Math.abs(m).toFixed(1);
   // One point/bar per seat decision. A runoff supersedes the preceding general election.
   function storyRaces(office){
@@ -514,18 +531,18 @@
     rows.forEach(row=>{
       const first=firstRepublican(row.races),idx=order.indexOf(row.label);if(!first)return;
       shapes.push({type:'rect',xref:'x',yref:'y',x0:first.year-1.6,x1:xRange[1],y0:idx-.42,y1:idx+.42,fillcolor:'rgba(189,74,55,.09)',line:{width:0},layer:'below'});
-      annotations.push({x:first.year,y:row.label,text:`<b>${first.year}</b>`,showarrow:false,yshift:16,font:{family:'DM Sans, Arial, sans-serif',color:RED,size:10}});
+      annotations.push({x:first.year,y:row.label,text:`<b>${first.year}</b>`,showarrow:false,yshift:16,font:{family:'DM Sans, Arial, sans-serif',color:RED,size:12}});
     });
-    Plotly.react('story-tiles',traces,{margin:{l:window.innerWidth<600?145:190,r:24,t:16,b:46},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
-      font:{family:'DM Sans, Arial, sans-serif',color:'#59655f',size:10},showlegend:false,
+    Plotly.react('story-tiles',traces,{margin:{l:window.innerWidth<600?156:210,r:22,t:22,b:126},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+      font:{family:'DM Sans, Arial, sans-serif',color:'#59655f',size:PLOT_FONT},showlegend:true,legend:LEGEND_LIGHT,
       xaxis:{range:xRange,dtick:window.innerWidth<600?16:8,showgrid:false,title:'Election year',zeroline:false},
-      yaxis:{type:'category',categoryorder:'array',categoryarray:order,showgrid:false,tickfont:{size:11,color:'#35413c'}},
+      yaxis:{type:'category',categoryorder:'array',categoryarray:order,showgrid:false,tickfont:{size:13,color:'#35413c'}},
       shapes,annotations,hoverlabel:{bgcolor:'#1d2a27',font:{color:'#f6f1e8'},align:'left'}},STORY_OPTIONS).then(bindYearSelection);
   }
   function firstWinBand(first,xRange,shapes,annotations){
     if(!first)return;
     shapes.push({type:'rect',xref:'x',yref:'paper',x0:first.x-first.width/2,x1:xRange[1],y0:0,y1:1,fillcolor:'rgba(189,74,55,.07)',line:{width:0},layer:'below'});
-    annotations.push({x:first.x,y:1,xref:'x',yref:'paper',xanchor:'left',yanchor:'bottom',text:'<b>First Republican win →</b>',showarrow:false,font:{family:'DM Sans, Arial, sans-serif',size:10,color:RED}});
+    annotations.push({x:first.x,y:1,xref:'x',yref:'paper',xanchor:'left',yanchor:'bottom',text:'<b>First Republican win →</b>',showarrow:false,font:{family:'DM Sans, Arial, sans-serif',size:12,color:RED}});
   }
   function storyCallout(x,y,n){
     return {x,y,text:n.text,showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#9a9e97',ax:n.ax||0,ay:n.ay||(y>=0?-36:36),font:{family:'DM Sans, Arial, sans-serif',size:11,color:n.color||'#1e2927'},bgcolor:'rgba(0,0,0,0)',bordercolor:'rgba(0,0,0,0)',borderwidth:0,borderpad:0};
@@ -534,7 +551,7 @@
     const races=storyRaces(office),first=firstRepublican(races);
     const traces=Object.entries(STORY_CATS).map(([key,style])=>{
       const group=races.filter(g=>g.category===key);
-      if(key==='missing')return {type:'scatter',mode:'markers',x:group.map(g=>g.x),y:group.map(()=>0),text:group.map(describeGroup),hovertemplate:'%{text}<extra></extra>',marker:{symbol:'circle-open',size:11,color:style.color}};
+      if(key==='missing')return {type:'scatter',mode:'markers',name:style.name,x:group.map(g=>g.x),y:group.map(()=>0),text:group.map(describeGroup),hovertemplate:'%{text}<extra></extra>',marker:{symbol:'circle-open',size:11,color:style.color}};
       return {type:'bar',name:style.name,x:group.map(g=>g.x),y:group.map(g=>g.margin),width:group.map(g=>g.width),
         text:group.map(describeGroup),textposition:'none',customdata:group.map(g=>{const d=g.decider;if(d.writein)return `${formatMargin(g.margin)}; Democratic share including ${d.writein.name}: ${(d.D+d.writein.pct).toFixed(1)}%`;return g.category==='unopposed'?'No Republican nominee':formatMargin(g.margin);}),
         hovertemplate:'%{text}<br>Margin: %{customdata}<extra></extra>',
@@ -548,12 +565,12 @@
     const valid=races.filter(g=>g.margin!==null).map(g=>g.margin);
     const ymax=races.some(g=>g.category==='unopposed')?118:Math.max(25,Math.max(...valid)+22);
     const ymin=Math.min(-30,Math.min(...valid)-24);
-    const layout={margin:{l:63,r:18,t:28,b:54},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
-      font:{family:'DM Sans, Arial, sans-serif',color:'#58645e',size:10},showlegend:false,barmode:'overlay',bargap:0,
+    const layout={margin:{l:75,r:18,t:38,b:130},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+      font:{family:'DM Sans, Arial, sans-serif',color:'#58645e',size:PLOT_FONT},showlegend:true,legend:LEGEND_LIGHT,barmode:'overlay',bargap:0,
       xaxis:{range:xRange,dtick:window.innerWidth<600?16:8,showgrid:false,title:'Election year',zeroline:false},
       yaxis:{range:[ymin,ymax],title:'D − R margin (points)',zeroline:true,zerolinecolor:'#68736d',gridcolor:'#ddd9ce'},
       shapes,annotations,hoverlabel:{bgcolor:'#1d2a27',font:{color:'#f6f1e8'},align:'left'}};
-    Plotly.react(div,traces,layout,STORY_OPTIONS).then(bindYearSelection);
+    Plotly.react(div,traces,layout,STORY_OPTIONS).then(()=>registerLinkedPlot(div,races.map(g=>g.year),shapes));
   }
   function marginVsNation(xRange,notes=[]){
     const data=GA.president.filter(r=>r.natl!=null),lean=data.map(r=>+(r.D-r.R-r.natl).toFixed(1));
@@ -566,32 +583,29 @@
       annotations.push({...storyCallout(x,y,n),showarrow:false,yanchor:'bottom'});
       n.years.forEach(year=>annotations.push({x:year,y:leanAt(year),ax:x,ay:y,axref:'x',ayref:'y',text:'',showarrow:true,arrowhead:0,arrowwidth:1,arrowcolor:'#718096'}));
     });
-    const trace={type:'bar',x:data.map(r=>r.year),y:lean,width:2.6,marker:{color:lean.map(v=>v>=0?BLUE:RED)},
-      customdata:data.map(r=>[formatMargin(+(r.D-r.R).toFixed(1)),formatMargin(r.natl)]),
-      hovertemplate:'%{x}<br>Georgia: %{customdata[0]}<br>Nation: %{customdata[1]}<br>Georgia minus nation: %{y:+.1f} pts<extra></extra>'};
-    Plotly.react('story-lean',[trace],{margin:{l:64,r:18,t:28,b:52},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
-      font:{family:'DM Sans, Arial, sans-serif',color:'#58645e',size:10},showlegend:false,
+    const leanTraces=[
+      {name:'Georgia more Democratic than U.S.',color:BLUE,test:v=>v>=0},
+      {name:'Georgia more Republican than U.S.',color:RED,test:v=>v<0}
+    ].map(part=>{
+      const subset=data.map((r,i)=>({r,v:lean[i]})).filter(o=>part.test(o.v));
+      return {type:'bar',name:part.name,x:subset.map(o=>o.r.year),y:subset.map(o=>o.v),
+        width:2.6,marker:{color:part.color},
+        customdata:subset.map(o=>[formatMargin(+(o.r.D-o.r.R).toFixed(1)),formatMargin(o.r.natl)]),
+        hovertemplate:'%{x}<br>Georgia: %{customdata[0]}<br>Nation: %{customdata[1]}<br>Georgia minus nation: %{y:+.1f} pts<extra></extra>'};
+    });
+    Plotly.react('story-lean',leanTraces,{margin:{l:78,r:18,t:38,b:116},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
+      font:{family:'DM Sans, Arial, sans-serif',color:'#58645e',size:PLOT_FONT},showlegend:true,legend:LEGEND_LIGHT,barmode:'overlay',
       xaxis:{range:xRange,dtick:window.innerWidth<600?16:8,showgrid:false,title:'Presidential election year'},
       yaxis:{range:[Math.min(...lean)-20,Math.max(...lean)+20],title:'GA margin − U.S. margin (points)',zeroline:true,zerolinecolor:'#68736d',gridcolor:'#ddd9ce'},
-      shapes,annotations,hoverlabel:{bgcolor:'#1d2a27',font:{color:'#f6f1e8'}}},STORY_OPTIONS).then(bindYearSelection);
+      shapes,annotations,hoverlabel:{bgcolor:'#1d2a27',font:{color:'#f6f1e8'}}},STORY_OPTIONS).then(()=>registerLinkedPlot('story-lean',data.map(r=>r.year),shapes));
   }
   function renderStoryPlots(){
     const range=storyXRange();
     renderWinnerTiles(range);
-    marginChart('story-pres','president',[
-      {year:1952,text:'Eisenhower wins nationally;<br>Georgia stays Democratic',ay:-30},
-      {year:1960,text:'Kennedy +25',ay:-25,ax:12},
-      {year:1964,text:'<b>1964: Goldwater +8</b><br>first Republican presidential<br>nominee to carry Georgia',color:RED,ax:-10,ay:60},
-      {year:1968,text:'Wallace (3rd party) wins',ay:-40,ax:15},
-      {year:1976,text:'Native Georgian Jimmy Carter',ay:-22},
-      {year:1992,text:'Clinton',ay:-35},
-      {year:2020,text:'Biden by 0.2',ay:-35}
-    ],range);
     marginVsNation(range,[
-      {year:1952,text:'~50 pts more Democratic<br>than the nation',ay:-30},
-      {year:1964,text:'<b>1964: 31 pts more Republican</b><br>than the nation, a 56-pt shift',color:RED,ay:10,ax:-110},
-      {years:[1976,1980],text:'1976 & 1980: Georgia temporarily swings<br>back left for Jimmy Carter',above:14},
-      {year:2024,text:'2024: within 1 pt<br>of the nation',ay:-40,ax:-30}
+      {year:1964,text:'<b>1964 · early Republican break</b><br>Georgia shifts sharply relative to the U.S.',color:RED,ay:25,ax:-90},
+      {years:[1976,1980],text:'1976–80 · Carter-era shift<br>back toward the Democrats',above:14},
+      {year:2020,text:'2020 · Biden narrowly<br>carries Georgia',ay:-45,ax:-25}
     ]);
     marginChart('story-senate','senate',[
       {year:1956,text:'1950–66: no Republican<br>on the ballot',ay:-22,ax:20},
@@ -610,6 +624,159 @@
       {year:2002,text:'<b>2002: Perdue (R)</b><br>first GOP governor<br>since Reconstruction',color:RED,ay:40,ax:-60},
       {year:2018,text:'Kemp +1.4',ay:40}
     ],range);
+  }
+  // Cross-chart coordination: only draw a gold matching-year band on charts
+  // that actually contain an election that year. A hovered preview never
+  // replaces a pinned selection; leaving the chart restores the pinned year.
+  function registerLinkedPlot(id,years,baseShapes){
+    linkedYearSets.set(id,new Set(years));
+    linkedBaseShapes.set(id,baseShapes.map(shape=>({...shape})));
+    const plot=document.getElementById(id);
+    if(!plot.dataset.storyYearLinked){
+      plot.on('plotly_hover',ev=>{
+        if(pinnedStoryYear!==null)return;
+        const point=ev.points?.[0];
+        if(point&&Number.isFinite(Number(point.x))) setLinkedPreview(Math.round(Number(point.x)));
+      });
+      plot.on('plotly_unhover',()=>{if(pinnedStoryYear===null) setLinkedPreview(null);});
+      plot.on('plotly_click',ev=>{
+        const point=ev.points?.[0];
+        if(!point||!Number.isFinite(Number(point.x)))return;
+        pinLinkedYear(Math.round(Number(point.x)));
+      });
+      plot.dataset.storyYearLinked='true';
+    }
+    paintLinkedYear();
+  }
+  function setupLinkedYears(){
+    document.querySelectorAll('[data-compare-year]').forEach(btn=>btn.addEventListener('click',()=>{
+      pinLinkedYear(Number(btn.dataset.compareYear));
+    }));
+    document.getElementById('linked-year-clear').addEventListener('click',()=>{
+      pinnedStoryYear=null;
+      hoveredStoryYear=null;
+      paintLinkedYear();
+    });
+    paintLinkedYear();
+  }
+  function setLinkedPreview(year){
+    if(pinnedStoryYear!==null)return;
+    if(hoveredStoryYear===year)return;
+    hoveredStoryYear=year;
+    paintLinkedYear();
+  }
+  function pinLinkedYear(year){
+    if(!Number.isFinite(year))return;
+    pinnedStoryYear=(pinnedStoryYear===year)?null:year;
+    hoveredStoryYear=null;
+    if(pinnedStoryYear!==null)setExploreYear(pinnedStoryYear);
+    paintLinkedYear();
+  }
+  function paintLinkedYear(){
+    const year=pinnedStoryYear??hoveredStoryYear;
+    ++storyYearPaintToken;
+    LINKED_CHARTS.forEach(id=>{
+      const plot=document.getElementById(id),base=linkedBaseShapes.get(id);
+      if(!plot?.layout||!base)return;
+      const matches=year!==null&&linkedYearSets.get(id)?.has(year);
+      const shapes=matches?[...base,
+        {type:'rect',xref:'x',yref:'paper',x0:year-1.8,x1:year+1.8,y0:0,y1:1,
+          fillcolor:'rgba(207,155,60,.18)',line:{color:'#cf9b3c',width:1},layer:'below'},
+        {type:'line',xref:'x',yref:'paper',x0:year,x1:year,y0:0,y1:1,
+          line:{color:'#b07c1f',width:2,dash:'dot'},layer:'above'}
+      ]:base;
+      // Plotly.relayout is asynchronous. Ignore stale paints during very fast hover changes.
+      if(plot.dataset.paintYear===String(year)&&paintedStoryYear===year)return;
+      plot.dataset.paintYear=String(year);
+      try{Plotly.relayout(plot,{shapes}).catch(()=>{});}catch(_){/* Plot may have been detached. */}
+    });
+    paintedStoryYear=year;
+    updateLinkedSummary(year);
+  }
+  function updateLinkedSummary(year){
+    const title=document.getElementById('linked-year-title');
+    const status=document.getElementById('timeline-selection');
+    const clear=document.getElementById('linked-year-clear');
+    if(!title||!status)return;
+    title.textContent=year===null?'Compare across offices':`Election year · ${year}`;
+    const pinned=pinnedStoryYear!==null;
+    status.textContent=year===null?'Hover a bar in any chart to preview that year. Click a bar or year button to pin it. Gold bands appear only where that office has an election.':pinned?`Pinned: ${year}. Matching races are highlighted in gold. Click another bar or year to change the selection; Clear to return to hover preview. The Explore county map has been set to its nearest presidential year.`:`Previewing ${year}. Gold bands mark matching races; click to pin this year.`;
+    clear.hidden=!pinned;
+    document.querySelectorAll('[data-compare-year]').forEach(btn=>btn.setAttribute('aria-pressed',String(pinned&&Number(btn.dataset.compareYear)===year)));
+    const setCard=(type,value,detail)=>{
+      document.getElementById(`summary-${type}-value`).textContent=value;
+      document.getElementById(`summary-${type}-detail`).textContent=detail;
+    };
+    if(year===null){
+      setCard('president','—','Select a year to see the presidential lean and Georgia margin.');
+      setCard('senate','—','Senate seats may be decided in different years.');
+      setCard('governor','—','Governor elections follow their own cycle.');
+      return;
+    }
+    const pres=GA.president.find(r=>r.year===year&&r.natl!=null);
+    if(pres){
+      const ga=pres.D-pres.R,lean=ga-pres.natl;
+      setCard('president',`${fmtSigned(lean)} pts vs. U.S.`, `Georgia: ${formatMargin(ga)} · U.S.: ${formatMargin(pres.natl)}. Positive lean = more Democratic than the nation.${year===1968?' Wallace carried Georgia; the margin compares D and R candidates only.':''}`);
+    }else setCard('president','No presidential race',noData);
+    for(const [office,type] of [['senate','senate'],['governor','governor']]){
+      const races=storyRaces(office).filter(g=>g.year===year);
+      if(!races.length){setCard(type,'No recorded race',noData);continue;}
+      const winner=g=>g.decider.winner||g.decider.rname||g.decider.dname||'Winner not specified';
+      const names=races.map(g=>`${winner(g)} (${g.category==='unopposed'?'D, unopposed':g.party||'?'}), ${g.margin===null?'margin unavailable':g.category==='unopposed'?'no R nominee':formatMargin(g.margin)}`);
+      setCard(type,races.length===1?`${races[0].party==='R'?'Republican':races[0].party==='D'?'Democratic':races[0].party==='O'?'Third party':'Recorded'} win${races.length===1?'':'s'}`:`${races.length} seat decisions`,names.join(' · '));
+    }
+  }
+
+  // A short, self-contained animated sequence. Users can select any milestone;
+  // autoplay is one pass on entering the section and is disabled for reduced motion.
+  function setupMilestones(){
+    const moments=[
+      {year:1964,label:'THE FIRST BREAK · PRESIDENT',title:'Goldwater carries Georgia.',description:'Barry Goldwater wins Georgia’s presidential vote in 1964, breaking with the state’s usual Democratic presidential pattern. That result did not immediately change its Senate seats or governorship.'},
+      {year:1980,label:'THE SENATE BREAKTHROUGH',title:'Mattingly wins a Senate seat.',description:'Mack Mattingly becomes Georgia’s first modern-era Republican U.S. senator in 1980. Democrats reclaim that seat in 1986, and the longer Republican hold develops later; Republicans control both seats by 2004.'},
+      {year:2002,label:'THE GOVERNORSHIP',title:'Perdue wins the governor’s office.',description:'Sonny Perdue defeats Roy Barnes in 2002, becoming Georgia’s first Republican governor since Reconstruction. The executive branch changes hands decades after the first Republican presidential breakthrough.'}
+    ];
+    const root=document.getElementById('milestone-experience');
+    if(!root)return;
+    const buttons=[...root.querySelectorAll('[data-milestone]')];
+    const replay=document.getElementById('milestone-replay');
+    const compare=document.getElementById('milestone-compare');
+    const status=document.getElementById('milestone-status');
+    let index=0,timer=null,played=false;
+    const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    function stop(){if(timer){window.clearInterval(timer);timer=null;}replay.textContent='▶ Replay timeline';replay.setAttribute('aria-label','Replay the three milestones');}
+    function select(i){
+      index=i;const m=moments[index];
+      buttons.forEach((btn,j)=>{btn.classList.toggle('is-current',i===j);btn.classList.toggle('is-past',j<i);btn.setAttribute('aria-pressed',String(i===j));});
+      document.getElementById('milestone-rail-fill').style.width=`${index*50}%`;
+      document.getElementById('milestone-detail-year').textContent=m.year;
+      document.getElementById('milestone-detail-label').textContent=m.label;
+      document.getElementById('milestone-detail-title').textContent=m.title;
+      document.getElementById('milestone-detail-description').textContent=m.description;
+      status.textContent=`Stage ${i+1} of 3 · ${m.year} · ${['Presidency','U.S. Senate','Governor'][i]}`;
+      compare.replaceChildren(document.createTextNode(`Compare ${m.year} in the linked charts `));
+      const arrow=document.createElement('span');arrow.textContent='↗';arrow.setAttribute('aria-hidden','true');compare.appendChild(arrow);
+    }
+    function play(){
+      stop();played=true;select(0);
+      if(reduceMotion)return;
+      replay.textContent='Ⅱ Pause timeline';replay.setAttribute('aria-label','Pause timeline animation');
+      timer=window.setInterval(()=>{if(index>=moments.length-1){stop();return;}select(index+1);if(index===moments.length-1)stop();},2100);
+    }
+    buttons.forEach((btn,i)=>btn.addEventListener('click',()=>{played=true;stop();select(i);}));
+    replay.addEventListener('click',()=>{if(timer){stop();return;}play();});
+    compare.addEventListener('click',()=>{
+      // A milestone can link to the same year chosen in the three charts.
+      pinnedStoryYear=null;
+      pinLinkedYear(moments[index].year);
+      document.getElementById('timeline-title').scrollIntoView({behavior:reduceMotion?'instant':'smooth',block:'start'});
+    });
+    select(0);
+    if('IntersectionObserver' in window){
+      const observer=new IntersectionObserver(entries=>{
+        if(entries.some(e=>e.isIntersecting)&&!played){play();observer.disconnect();}
+      },{threshold:.23});
+      observer.observe(root);
+    }
   }
   const NOTES={
     president:'Statewide: MIT Election Data + Science Lab (1976–2020), Wikipedia (1960–72), project-compiled results (1948–56, 2024). County results: Wikipedia (1960–2004), tonmcg/GitHub (2008–2024). Demographics: Census Bureau population estimates (2000, 2010, 2019). 1968: Wallace won Georgia and counts as “Other.”',
@@ -631,10 +798,20 @@
       // Keep every Senate race plotted and hoverable, but label only every third category.
       xaxis.tickmode='array';xaxis.tickvals=x.filter((_,i)=>i%3===0||i===x.length-1);
     }
-    const common={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'DM Sans, Arial, sans-serif',color:'#c9d0c8',size:10},margin:{l:52,r:12,t:18,b:50},xaxis,hoverlabel:{bgcolor:'#172320',font:{color:'#f6f1e8'}},legend:{orientation:'h',y:-.27,font:{size:10}}};
+    const common={paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'DM Sans, Arial, sans-serif',color:'#c9d0c8',size:PLOT_FONT},margin:{l:63,r:12,t:26,b:115},xaxis,showlegend:true,hoverlabel:{bgcolor:'#172320',font:{color:'#f6f1e8'}},legend:LEGEND_DARK};
     Plotly.react('office-share-chart',share,{...common,yaxis:{title:'% of vote',range:[0,100],gridcolor:'#43524c'}},{responsive:true,displayModeBar:false});
     const margins=data.map(r=>+(r.D-r.R).toFixed(1));
-    Plotly.react('office-margin-chart',[{type:'bar',x,y:margins,marker:{color:margins.map(m=>m>=0?BLUE:RED)},customdata:data.map(r=>`${r.dname||'Democratic'} vs ${r.rname||'Republican'}`),hovertemplate:'%{x}: %{customdata}<br>D − R: %{y:+.1f} pts<extra></extra>'}],{...common,margin:{l:52,r:12,t:16,b:54},showlegend:false,xaxis,yaxis:{title:'D − R (points)',zeroline:true,zerolinecolor:'#9da89e',gridcolor:'#43524c'}},{responsive:true,displayModeBar:false});
+    const marginTraces=[
+      {name:'D leads R',color:BLUE,test:m=>m>=0},
+      {name:'R leads D',color:RED,test:m=>m<0}
+    ].map(part=>{
+      const subset=data.map((r,i)=>({r,label:x[i],m:margins[i]})).filter(o=>part.test(o.m));
+      return {type:'bar',name:part.name,x:subset.map(o=>o.label),y:subset.map(o=>o.m),
+        marker:{color:part.color},customdata:subset.map(o=>`${o.r.dname||'Democratic'} vs ${o.r.rname||'Republican'}`),
+        hovertemplate:'%{x}: %{customdata}<br>D − R: %{y:+.1f} pts<extra></extra>'};
+    });
+    Plotly.react('office-margin-chart',marginTraces,{...common,barmode:'overlay',xaxis,
+      yaxis:{title:'D − R (points)',zeroline:true,zerolinecolor:'#9da89e',gridcolor:'#43524c'}},{responsive:true,displayModeBar:false});
     document.getElementById('office-source').textContent=NOTES[office];
     renderScatter();
   }
@@ -648,10 +825,14 @@
     const selectedIdx=brushedCounties.size?ids.reduce((acc,id,i)=>{if(brushedCounties.has(id))acc.push(i);return acc;},[]):undefined;
     Plotly.react('county-scatter',[{type:'scatter',mode:'markers',x:xs,y:margins,text:ids.map(id=>mapCounties.get(id)),customdata:ids,
       selectedpoints:selectedIdx,
-      marker:{size:9,color:margins.map(m=>marginColor(m)),line:{color:'#d8ded6',width:.7},opacity:.87},
+      marker:{size:9,color:margins,colorscale:[[0,RED],[0.5,'#f3f0e8'],[1,BLUE]],cmin:-80,cmax:80,
+        showscale:true,colorbar:{title:{text:'D − R (pts)',side:'top',font:{size:12,color:'#e2e9dd'}},
+          tickvals:[-80,0,80],ticktext:['R +80','0','D +80'],tickfont:{size:11,color:'#e2e9dd'},
+          thickness:13,len:.77,x:1.02,xpad:2,outlinewidth:0},
+        line:{color:'#d8ded6',width:.7},opacity:.87},
       selected:{marker:{size:14,opacity:1,line:{color:GOLD,width:2}}},unselected:{marker:{opacity:.2}},
       hovertemplate:'%{text}<br>'+metric.name+': %{x}<br>Presidential margin: %{y:+.1f} pts<extra></extra>'}],{
-      margin:{l:62,r:20,t:20,b:55},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'DM Sans, Arial, sans-serif',color:'#c9d0c8',size:10},showlegend:false,
+      margin:{l:75,r:90,t:34,b:76},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',font:{family:'DM Sans, Arial, sans-serif',color:'#c9d0c8',size:PLOT_FONT},showlegend:false,
       // clickmode event: point clicks toggle via plotly_click (no Plotly replace-selection / Ctrl required).
       dragmode:'select',selectdirection:'any',clickmode:'event',
       xaxis:{title:metric.name+(pop?' (log scale)':' (%)'),type:pop?'log':'linear',gridcolor:'#43524c',color:'#c9d0c8'},yaxis:{title:'Presidential margin (D − R, points)',zeroline:true,zerolinecolor:'#9da89e',gridcolor:'#43524c',color:'#c9d0c8'},hoverlabel:{bgcolor:'#172320',font:{color:'#f6f1e8'}}
