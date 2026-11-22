@@ -155,7 +155,7 @@ body{font-size:18px;line-height:1.7}
 .milestone-rail>span{display:block;width:0;height:100%;background:#bd4a37;transition:width .65s ease}
 .milestone-button{appearance:none;border:0;padding:0 7px 10px;background:transparent;color:#727b71;display:flex;align-items:center;flex-direction:column;text-align:center;cursor:pointer;min-width:0}
 .milestone-dot{height:32px;width:32px;border-radius:50%;background:#d8d8ce;border:3px solid #f9f7f0;outline:2px solid #aaa99b;transition:background .32s,outline-color .32s,transform .32s}
-.milestone-button.is-past .milestone-dot{background:#b78d4a;outline-color:#ae7439}
+.milestone-button.is-past .milestone-dot{background:#bd4a37;outline-color:#bd4a37}
 .milestone-button.is-current .milestone-dot{background:#bd4a37;outline-color:#bd4a37;transform:scale(1.2)}
 .milestone-year{font:500 clamp(27px,3.3vw,42px)/1.05 var(--serif);margin-top:14px;color:#5a675b}
 .milestone-button.is-current .milestone-year{color:#a13e2f}
@@ -363,4 +363,16 @@ body.dark-mode{--paper:#141c1c;--paper2:#202b2a;--ink:#f2f3ea;--muted:#b4c1bb;--
     padding: 6px 8px;
     font-size: 10px;
   }
+}
+
+/* Year placement for both county-map headers. */
+.rail-heading > div {min-width:0;flex:1 1 auto;}
+.rail-heading .map-year-label {margin:0 0 0 auto;flex:0 0 auto;white-space:nowrap;text-align:right;font:700 clamp(16px,2vw,24px)/1.2 var(--sans);color:var(--ink);}
+.explore-map-panel .panel-head {align-items:center;gap:16px;}
+.explore-map-panel .panel-head > div {min-width:0;}
+.explore-map-panel .explore-map-year {margin:0 0 0 auto;flex:0 0 auto;white-space:nowrap;text-align:right;color:#f5f1e8;font:700 clamp(19px,2.4vw,27px)/1.1 var(--sans);}
+.dark-mode .rail-heading .map-year-label {color:#f2f3ea;}
+@media(max-width:420px){
+  .rail-heading .map-year-label {font-size:17px;}
+  .explore-map-panel .explore-map-year {font-size:20px;}
 }

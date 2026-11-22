@@ -30,10 +30,10 @@
   const LINKED_CHARTS=['story-lean','story-senate','story-gov'];
   const linkedYearSets=new Map();
   const linkedBaseShapes=new Map();
-  let pinnedStoryYear=null, hoveredStoryYear=null;
+  let pinnedStoryYear=1964, hoveredStoryYear=null;
   let paintedStoryYear=null;
   let storyYearPaintToken=0;
-  const noData='No election in this dataset for this year.';
+  const noData='No race recorded for this year.';
   const tooltip = document.getElementById('county-tooltip');
 
   function applyPlotTheme(dark) {
@@ -398,13 +398,13 @@
     }
     if(mode==='swing'){
       document.getElementById('rail-title').textContent='A county-by-county swing';
-      document.getElementById('rail-caption').textContent='Change in county presidential margin, 1960 → 1964. Negative values indicate movement toward Republicans; positive values toward Democrats.';
+      document.getElementById('rail-caption').textContent='1960–1964 margin change. Negative = shift Republican; positive = shift Democratic.';
       document.getElementById('story-legend').innerHTML='<span>Toward Republican</span><i class="legend-gradient"></i><span>Toward Democratic</span>';
       document.querySelector('.visual-rail .map-scale').innerHTML='<span>−80 pts</span><span>Change in D − R margin</span><span>+80 pts</span>';
     } else {
       const titles={1960:'The Democratic baseline',1964:'The first break',1980:'The Senate follows',2000:'The governor race approaches',2024:'The latest presidential map'};
       document.getElementById('rail-title').textContent=titles[year]||'Presidential county margin';
-      document.getElementById('rail-caption').textContent=`Presidential county margins, ${year}. Blue indicates a Democratic lead; red indicates a Republican lead.`+(year===1980?' This is presidential context—not county-level Senate results.':'');
+      document.getElementById('rail-caption').textContent=`County presidential margin, ${year}. Blue = Democratic lead; red = Republican lead.`;
       document.getElementById('story-legend').innerHTML='<span>Republican lead</span><i class="legend-gradient"></i><span>Democratic lead</span>';
       document.querySelector('.visual-rail .map-scale').innerHTML='<span>−80 pts</span><span>Margin (D − R)</span><span>+80 pts</span>';
     }
@@ -434,9 +434,12 @@
       view.values[id]=v;p.setAttribute('fill',fill);
       p.setAttribute('aria-label',`${mapCounties.get(id)}. ${metricInfo.name}, ${metric==='margin'?year:demoYear}: ${metric==='margin'?fmtSigned(v)+' points':metric==='pop'?Math.round(v).toLocaleString():Number(v).toFixed(1)+' percent'}.`);
     });
-    const title=metric==='margin'?`Presidential margin · ${year}`:`${metricInfo.name} · ${demoYear}`;
-    document.getElementById('explore-map-title').textContent=title;
-    document.getElementById('explore-map-caption').textContent=metric==='margin'?`Margin is calculated as Democratic votes minus Republican votes, divided by total votes, for ${year}. Drag a box to select counties fully inside it; click to add or remove one. Selection is linked with the scatterplot.`:`Nearest demographic snapshot: ${demoYear}${year<2000?' (earliest available)':''}. The map and election year refer to different datasets. Drag a box or click counties to link a selection with the scatterplot.`;
+    const mapDataYear=metric==='margin'?year:demoYear;
+    document.getElementById('explore-map-title').textContent=metricInfo.name;
+    const mapYearLabel=document.getElementById('explore-map-year');
+    mapYearLabel.textContent=String(mapDataYear);
+    mapYearLabel.setAttribute('aria-label',`Map data year ${mapDataYear}`);
+    document.getElementById('explore-map-caption').textContent=metric==='margin'?`D − R vote-share margin, ${year}. Box-select or click to link counties with the scatterplot.`:`Demographic snapshot: ${demoYear}${year<2000?' (earliest available)':''}; election: ${year}. Box-select or click to link counties.`;
     document.getElementById('explore-low').textContent=metric==='margin'?'Republican lead':`Lower ${metricInfo.unit==='people'?'population':'share'}`;
     document.getElementById('explore-high').textContent=metric==='margin'?'Democratic lead':`Higher ${metricInfo.unit==='people'?'population':'share'}`;
     const grad=document.getElementById('explore-gradient');grad.style.background=metric==='margin'?'linear-gradient(90deg,#bd4a37,#f3f0e8,#326c86)':`linear-gradient(90deg,${DEMO_STOPS.join(',')})`;
@@ -593,7 +596,7 @@
     });
     Plotly.react('story-tiles',traces,{margin:{l:window.innerWidth<600?156:210,r:22,t:22,b:126},paper_bgcolor:'rgba(0,0,0,0)',plot_bgcolor:'rgba(0,0,0,0)',
       font:{family:'DM Sans, Arial, sans-serif',color:'#59655f',size:PLOT_FONT},showlegend:true,legend:LEGEND_LIGHT,
-      xaxis:{range:xRange,dtick:window.innerWidth<600?16:8,showgrid:false,title:'Election year',zeroline:false},
+      xaxis:{range:xRange,dtick:window.innerWidth<600?8:4,showgrid:true,griddash:'dot',gridwidth:1,gridcolor:'rgba(91,105,98,.28)',title:'Election year',zeroline:false},
       yaxis:{type:'category',categoryorder:'array',categoryarray:order,showgrid:false,tickfont:{size:13,color:'#35413c'}},
       shapes,annotations,hoverlabel:{bgcolor:'#1d2a27',font:{color:'#f6f1e8'},align:'left'}},STORY_OPTIONS).then(bindYearSelection);
   }
@@ -692,11 +695,10 @@
     const plot=document.getElementById(id);
     if(!plot.dataset.storyYearLinked){
       plot.on('plotly_hover',ev=>{
-        if(pinnedStoryYear!==null)return;
         const point=ev.points?.[0];
         if(point&&Number.isFinite(Number(point.x))) setLinkedPreview(Math.round(Number(point.x)));
       });
-      plot.on('plotly_unhover',()=>{if(pinnedStoryYear===null) setLinkedPreview(null);});
+      plot.on('plotly_unhover',()=>setLinkedPreview(null));
       plot.on('plotly_click',ev=>{
         const point=ev.points?.[0];
         if(!point||!Number.isFinite(Number(point.x)))return;
@@ -710,20 +712,7 @@
     document.querySelectorAll('[data-compare-year]').forEach(btn=>btn.addEventListener('click',()=>{
       pinLinkedYear(Number(btn.dataset.compareYear));
     }));
-    document.getElementById('linked-year-clear').addEventListener('click',()=>{
-      pinnedStoryYear=null;
-      hoveredStoryYear=null;
-      paintLinkedYear();
-    });
     paintLinkedYear();
-
-  // Clear button for the floating toolbar
-  document.getElementById('sticky-year-clear')
-    .addEventListener('click', () => {
-      pinnedStoryYear = null;
-      hoveredStoryYear = null;
-      paintLinkedYear();
-    });
 
   // Show the floating toolbar only after the original
   // white comparison panel has scrolled out of view.
@@ -762,20 +751,19 @@
   updateStickyYearBar();
   }
   function setLinkedPreview(year){
-    if(pinnedStoryYear!==null)return;
     if(hoveredStoryYear===year)return;
     hoveredStoryYear=year;
     paintLinkedYear();
   }
   function pinLinkedYear(year){
     if(!Number.isFinite(year))return;
-    pinnedStoryYear=(pinnedStoryYear===year)?null:year;
+    pinnedStoryYear=year;
     hoveredStoryYear=null;
-    if(pinnedStoryYear!==null)setExploreYear(pinnedStoryYear);
+    setExploreYear(pinnedStoryYear);
     paintLinkedYear();
   }
   function paintLinkedYear(){
-    const year=pinnedStoryYear??hoveredStoryYear;
+    const year=hoveredStoryYear??pinnedStoryYear;
     ++storyYearPaintToken;
     LINKED_CHARTS.forEach(id=>{
       const plot=document.getElementById(id);
@@ -808,14 +796,11 @@
   function updateLinkedSummary(year){
     const title=document.getElementById('linked-year-title');
     const status=document.getElementById('timeline-selection');
-    const clear=document.getElementById('linked-year-clear');
     if(!title||!status)return;
     title.textContent=year===null?'Compare across offices':`Election year · ${year}`;
     const pinned=pinnedStoryYear!==null;
-    status.textContent=year===null?'Hover a bar in any chart to preview that year. Click a bar or year button to pin it. Gold bands appear only where that office has an election.':pinned?`Pinned: ${year}. Matching races are highlighted in gold. Click another bar or year to change the selection; Clear to return to hover preview. The Explore county map has been set to its nearest presidential year.`:`Previewing ${year}. Gold bands mark matching races; click to pin this year.`;
-    clear.hidden=!pinned;
-    document.getElementById('sticky-year-clear').hidden = !pinned;
-    document.querySelectorAll('[data-compare-year]').forEach(btn=>btn.setAttribute('aria-pressed',String(pinned&&Number(btn.dataset.compareYear)===year)));
+    status.textContent=hoveredStoryYear!==null&&hoveredStoryYear!==pinnedStoryYear?`Previewing ${year}. Click a bar to select it.`:`Selected: ${year}. Hover a chart to preview; click a bar or choose a year to select.`;
+    document.querySelectorAll('[data-compare-year]').forEach(btn=>btn.setAttribute('aria-pressed',String(Number(btn.dataset.compareYear)===pinnedStoryYear)));
     const setCard=(type,value,detail)=>{
       document.getElementById(`summary-${type}-value`).textContent=value;
       document.getElementById(`summary-${type}-detail`).textContent=detail;
@@ -844,9 +829,9 @@
   // autoplay is one pass on entering the section and is disabled for reduced motion.
   function setupMilestones(){
     const moments=[
-      {year:1964,label:'THE FIRST BREAK · PRESIDENT',title:'Goldwater carries Georgia.',description:'Barry Goldwater wins Georgia’s presidential vote in 1964, breaking with the state’s usual Democratic presidential pattern. That result did not immediately change its Senate seats or governorship.'},
-      {year:1980,label:'THE SENATE BREAKTHROUGH',title:'Mattingly wins a Senate seat.',description:'Mack Mattingly becomes Georgia’s first modern-era Republican U.S. senator in 1980. Democrats reclaim that seat in 1986, and the longer Republican hold develops later; Republicans control both seats by 2004.'},
-      {year:2002,label:'THE GOVERNORSHIP',title:'Perdue wins the governor’s office.',description:'Sonny Perdue defeats Roy Barnes in 2002, becoming Georgia’s first Republican governor since Reconstruction. The executive branch changes hands decades after the first Republican presidential breakthrough.'}
+      {year:1964,label:'THE FIRST BREAK · PRESIDENT',title:'Goldwater carries Georgia.',description:'Barry Goldwater wins Georgia’s presidential vote in 1964, marking an early Republican breakthrough.'},
+      {year:1980,label:'THE SENATE BREAKTHROUGH',title:'Mattingly wins a Senate seat.',description:'Mack Mattingly wins a U.S. Senate seat in 1980. Democrats retake the seat in 1986; Republicans hold both seats by 2004.'},
+      {year:2002,label:'THE GOVERNORSHIP',title:'Perdue wins the governor’s office.',description:'Sonny Perdue defeats Roy Barnes in 2002, becoming Georgia’s first Republican governor since Reconstruction.'}
     ];
     const root=document.getElementById('milestone-experience');
     if(!root)return;
@@ -879,7 +864,6 @@
     replay.addEventListener('click',()=>{if(timer){stop();return;}play();});
     compare.addEventListener('click',()=>{
       // A milestone can link to the same year chosen in the three charts.
-      pinnedStoryYear=null;
       pinLinkedYear(moments[index].year);
       document.getElementById('timeline-title').scrollIntoView({behavior:reduceMotion?'instant':'smooth',block:'start'});
     });

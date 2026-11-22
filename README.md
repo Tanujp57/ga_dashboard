@@ -59,8 +59,8 @@ The project originally supplied only a short run instruction in `README.txt`; no
 ## Linked charts and milestone timeline (November 2026)
 
 - **Consolidation:** The raw presidential-margin graph in the three-office section was removed. The Georgia-versus-national presidential-margin chart is the sole presidential chart in that section. Hover its bars for Georgia's actual Democratic-minus-Republican margin, the national margin, and the difference between them. Major turning points (1964, the Carter years, 2020) are annotated.
-- **Linked year comparison:** Hover a presidential, Senate, or gubernatorial bar to preview that election year in all three charts. A gold band marks the same year *only in panels that have a result for that year*. Click any bar to pin a year; select a year chip to pin one of the featured years (1964, 1980, 2002, 2020), or use **Clear**. The summary reports each office's available result and explicitly identifies years without a recorded race. Choosing a year also sets the Explore map to its nearest available **presidential county-election** year; it does not invent county Senate or governor results.
-- **Animated milestones:** The three-stage timeline under “The change came in stages” advances from presidency (1964) through Senate (1980) to governor (2002). It automatically plays once when scrolled into view, can be replayed, and offers three clickable year milestones with their own explanatory text. Use **Compare [year] in the linked charts** to select that same year in the chart comparison and scroll back to it. When reduced-motion is requested, the automatic animation is disabled and the milestone buttons continue to work.
+- **Linked year comparison:** The three-office comparison opens with **1964 selected** in both the main and sticky year controls. Hover a presidential, Senate, or gubernatorial bar to preview that year across charts; the display returns to the selected year when hover ends. A gold band highlights corresponding results. Click a bar or select a year chip (1964, 1980, 2002, 2020) to keep that year selected; selecting the same year again leaves it selected. Both year toolbars have no Clear button. Choosing a year also sets Explore to the closest available presidential county-election year. The summary reports available office results and race gaps.
+- **Animated milestones:** The three-stage timeline under “The change came in stages” advances from presidency (1964) through Senate (1980) to governor (2002). Reached milestones stay red. It automatically plays once when scrolled into view, can be replayed, and offers three clickable milestones with concise historical explanations. Use **Compare [year] in the linked charts** to select that year and scroll back to the charts. Reduced-motion preferences disable autoplay.
 - All changes are in `index.html`, `styles.css`, and `app.js`. Original data scripts, geometry and survey CSV remain unchanged.
 
 ## Testing and limitations
@@ -74,3 +74,18 @@ The project originally supplied only a short run instruction in `README.txt`; no
 
 ## Dark mode (added)
 Use the Dark mode / Light mode button in the site header. Preference persists in your browser. The original dashboard and data are preserved.
+
+## November 2026: layout and copy refinement
+
+- Shortened the contextual paragraphs and visualization captions while keeping data caveats and source notes.
+- Added vertical dotted year guides to the statewide election winner-square timeline.
+- Right-aligned the year labels in the guided county map and Explore county map. For demographic maps, the right-side label shows the demographic snapshot year.
+- Removed inline story-description jump links; header/navigation controls and the interactive milestone comparison remain functional.
+- Moved **Explore the elections** immediately after the guided story, before **Different offices. Different clocks.** The interactive milestone section follows the office charts.
+- Kept the original election and demographic data, all seven Plotly graphs, county map interaction, linked-year behavior, responsive layout, and dark mode.
+
+## Latest refinements (November 22, 2026)
+
+- The connected office comparison and persistent year toolbar begin with 1964 selected; the year Clear controls have been removed.
+- The guided-story and milestone text has been streamlined while preserving data context in the methodology section.
+- Completed milestones remain red throughout the animation.
