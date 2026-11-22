@@ -70,3 +70,7 @@ The project originally supplied only a short run instruction in `README.txt`; no
 - The county map displays **presidential** county results only. It intentionally does not imply county-level Senate or governor outcomes.
 - Demographic snapshots are limited to 2000, 2010 and 2019. Survey CSV data is retained but not integrated into charts.
 - A few historical outcomes have special context (third-party winners, runoffs, write-ins, unopposed races, or legislative selection). Hover text and the story explain key caveats, but a two-party margin does not fully represent every such contest.
+
+
+## Dark mode (added)
+Use the Dark mode / Light mode button in the site header. Preference persists in your browser. The original dashboard and data are preserved.

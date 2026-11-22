@@ -36,6 +36,57 @@
   const noData='No election in this dataset for this year.';
   const tooltip = document.getElementById('county-tooltip');
 
+  function applyPlotTheme(dark) {
+    const color=dark?'#e5eee7':'#58645e';
+    const grid=dark?'#40524b':'#ddd9ce';
+    const hoverBg=dark?'#15201d':'#1d2a27';
+    for (const id of ['story-tiles','story-lean','story-senate','story-gov']) {
+      const el=document.getElementById(id);
+      if (!el?.layout || !window.Plotly) continue;
+      const changes={
+        'font.color':color,
+        'xaxis.tickfont.color':color,
+        'xaxis.title.font.color':color,
+        'yaxis.tickfont.color':color,
+        'yaxis.title.font.color':color,
+        'yaxis.gridcolor':grid,
+        'hoverlabel.bgcolor':hoverBg,
+        'hoverlabel.font.color':'#f6f1e8',
+        'legend.font.color':color
+      };
+      if(el.layout.annotations?.length) {
+        changes.annotations=el.layout.annotations.map(a=>({
+          ...a,
+          font:{...a.font,color:(a.font?.color==='#1e2927'||a.font?.color==='#58645e')?color:(a.font?.color||color)}
+        }));
+      }
+      Plotly.relayout(el,changes).catch(()=>{});
+    }
+  }
+  function setupThemeToggle() {
+    const button=document.getElementById('theme-toggle');
+    if(!button)return;
+    let dark=false;
+    try{dark=localStorage.getItem('ga-theme')==='dark';}catch(_){}
+    const apply=()=>{
+      document.body.classList.toggle('dark-mode',dark);
+      button.textContent=dark?'☀ Light mode':'☾ Dark mode';
+      button.setAttribute('aria-pressed',String(dark));
+      document.documentElement.style.colorScheme=dark?'dark':'light';
+      applyPlotTheme(dark);
+    };
+    button.addEventListener('click',()=>{
+      dark=!dark;
+      try{localStorage.setItem('ga-theme',dark?'dark':'light');}catch(_){}
+      apply();
+    });
+    apply();
+    // Plotly.react renders charts asynchronously after init; sync their colors once ready.
+    for(const id of ['story-tiles','story-lean','story-senate','story-gov']) {
+      const el=document.getElementById(id);
+      if(el?.then)el.then(()=>applyPlotTheme(dark));
+    }
+  }
   function init() {
     if (!window.GA || !window.GEO || !window.Plotly) {
       document.getElementById('load-error').hidden = false;
@@ -58,6 +109,7 @@
     setupLinkedYears();
     updateStoryFacts();
     renderExploreCharts();
+    setupThemeToggle();
     bindResize();
     window.addEventListener('resize', resizeCharts, {passive:true});
   }
@@ -323,6 +375,12 @@
     if(race){const share=100*race.R/(race.D+race.R);document.querySelector('.hero-art-bottom strong').textContent=`${share.toFixed(1)}%`;}
   }
   function renderStoryMap(year, mode='margin') {
+    const yearLabel = document.getElementById("story-map-year");
+
+    if (yearLabel) {
+      yearLabel.textContent =
+        mode === "swing" ? "1960–1964" : String(year);
+    }
     const countyData=GA.county[String(year)]||{};
     const story=mapViews.get('story-map');
     const v=story;
@@ -658,6 +716,50 @@
       paintLinkedYear();
     });
     paintLinkedYear();
+
+  // Clear button for the floating toolbar
+  document.getElementById('sticky-year-clear')
+    .addEventListener('click', () => {
+      pinnedStoryYear = null;
+      hoveredStoryYear = null;
+      paintLinkedYear();
+    });
+
+  // Show the floating toolbar only after the original
+  // white comparison panel has scrolled out of view.
+  const stickyBar = document.getElementById('sticky-year-bar');
+  const originalPanel = document.querySelector('.linked-year-panel');
+  const officeSection = document.querySelector('.office-figures');
+
+  function updateStickyYearBar() {
+    const header = document.querySelector('.site-header');
+    const mobileNav = document.querySelector('.mobile-chapters');
+
+    let headerBottom = header.getBoundingClientRect().bottom;
+
+    if (mobileNav && getComputedStyle(mobileNav).display !== 'none') {
+      headerBottom = Math.max(
+        headerBottom,
+        mobileNav.getBoundingClientRect().bottom
+      );
+    }
+
+    const passedOriginal =
+      originalPanel.getBoundingClientRect().bottom <= headerBottom;
+
+    const withinCharts =
+      officeSection.getBoundingClientRect().bottom >
+      headerBottom + stickyBar.offsetHeight;
+
+    stickyBar.hidden = !(passedOriginal && withinCharts);
+  }
+
+  window.addEventListener('scroll', updateStickyYearBar, {
+    passive: true
+  });
+
+  window.addEventListener('resize', updateStickyYearBar);
+  updateStickyYearBar();
   }
   function setLinkedPreview(year){
     if(pinnedStoryYear!==null)return;
@@ -676,19 +778,29 @@
     const year=pinnedStoryYear??hoveredStoryYear;
     ++storyYearPaintToken;
     LINKED_CHARTS.forEach(id=>{
-      const plot=document.getElementById(id),base=linkedBaseShapes.get(id);
+      const plot=document.getElementById(id);
+      const base=linkedBaseShapes.get(id);
       if(!plot?.layout||!base)return;
-      const matches=year!==null&&linkedYearSets.get(id)?.has(year);
-      const shapes=matches?[...base,
-        {type:'rect',xref:'x',yref:'paper',x0:year-1.8,x1:year+1.8,y0:0,y1:1,
-          fillcolor:'rgba(207,155,60,.18)',line:{color:'#cf9b3c',width:1},layer:'below'},
-        {type:'line',xref:'x',yref:'paper',x0:year,x1:year,y0:0,y1:1,
-          line:{color:'#b07c1f',width:2,dash:'dot'},layer:'above'}
-      ]:base;
-      // Plotly.relayout is asynchronous. Ignore stale paints during very fast hover changes.
-      if(plot.dataset.paintYear===String(year)&&paintedStoryYear===year)return;
-      plot.dataset.paintYear=String(year);
-      try{Plotly.relayout(plot,{shapes}).catch(()=>{});}catch(_){/* Plot may have been detached. */}
+
+      // Every chart gets a reference line, even if that office had no election.
+      // Only a chart with an actual race gets the shaded matching-year band.
+      const hasElection=year!==null&&linkedYearSets.get(id)?.has(year);
+      const shapes=[...base];
+      if(year!==null){
+        if(hasElection || (id === 'story-lean' && year === 2002)){
+          shapes.push({type:'rect',xref:'x',yref:'paper',
+            x0:year-1.8,x1:year+1.8,y0:0,y1:1,
+            fillcolor:'rgba(207,155,60,.18)',
+            line:{color:'#cf9b3c',width:1},layer:'below'});
+        }
+        shapes.push({type:'line',xref:'x',yref:'paper',
+          x0:year,x1:year,y0:0,y1:1,
+          line:{color:'#b07c1f',width:2,dash:'dot'},layer:'above'});
+      }
+      // Always apply the current state; no cross-chart skip based on
+      // a previous chart's paint. Plotly manages relayout asynchronously.
+      try{Plotly.relayout(plot,{shapes}).catch(()=>{});}
+      catch(_){/* Plot may have been detached. */}
     });
     paintedStoryYear=year;
     updateLinkedSummary(year);
@@ -702,6 +814,7 @@
     const pinned=pinnedStoryYear!==null;
     status.textContent=year===null?'Hover a bar in any chart to preview that year. Click a bar or year button to pin it. Gold bands appear only where that office has an election.':pinned?`Pinned: ${year}. Matching races are highlighted in gold. Click another bar or year to change the selection; Clear to return to hover preview. The Explore county map has been set to its nearest presidential year.`:`Previewing ${year}. Gold bands mark matching races; click to pin this year.`;
     clear.hidden=!pinned;
+    document.getElementById('sticky-year-clear').hidden = !pinned;
     document.querySelectorAll('[data-compare-year]').forEach(btn=>btn.setAttribute('aria-pressed',String(pinned&&Number(btn.dataset.compareYear)===year)));
     const setCard=(type,value,detail)=>{
       document.getElementById(`summary-${type}-value`).textContent=value;

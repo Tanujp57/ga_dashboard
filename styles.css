@@ -193,3 +193,174 @@ body{font-size:18px;line-height:1.7}
  .milestone-office{font-size:9px}
 }
 @media(prefers-reduced-motion:reduce){.milestone-rail>span,.milestone-dot{transition:none}}
+.map-year-label {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  margin: 10px 0;
+  color: var(--ink);
+}
+/* Compact floating election-year toolbar */
+.sticky-year-bar {
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  z-index: 49;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+
+  padding: 10px 20px;
+  background: #f9f7f0;
+  border-bottom: 1px solid #cecabe;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+}
+
+.sticky-year-bar[hidden] {
+  display: none !important;
+}
+
+.sticky-year-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #303b35;
+}
+
+/* Smaller screens */
+@media (max-width: 1100px) {
+  .sticky-year-bar {
+    top: 108px;
+  }
+}
+
+@media (max-width: 760px) {
+  .sticky-year-bar {
+    top: 101px;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .sticky-year-bar .year-chip {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+}
+
+
+/* Accessible light/dark theme toggle. Added after existing CSS for cascade precedence. */
+.header-actions{justify-self:end;display:flex;align-items:center;gap:14px}
+.header-actions .header-explore{justify-self:auto}
+.theme-toggle{border:1px solid var(--rule);border-radius:5px;background:transparent;color:var(--ink);font:600 12px var(--sans);padding:7px 10px;white-space:nowrap;cursor:pointer}
+.theme-toggle:hover{border-color:var(--gold)}
+body.dark-mode{--paper:#141c1c;--paper2:#202b2a;--ink:#f2f3ea;--muted:#b4c1bb;--rule:#42504c;--white:#202b2a;background:var(--paper);color:var(--ink)}
+.dark-mode .site-header,.dark-mode .mobile-chapters{background:rgba(20,28,28,.97);border-color:var(--rule)}
+.dark-mode .masthead,.dark-mode .chapter-nav a.is-current,.dark-mode .progress-label,.dark-mode .header-explore,.dark-mode .hero-deck,.dark-mode .hero-byline{color:var(--ink)}
+.dark-mode .chapter-nav,.dark-mode .mobile-chapters a,.dark-mode .masthead span{color:#bac5bf}
+.dark-mode .eyebrow,.dark-mode .hero-foot,.dark-mode .rail-heading .eyebrow{color:#bdc8c0}
+.dark-mode .hero-art,.dark-mode .visual-rail,.dark-mode .timeline-band,.dark-mode .office-figures{background:#253330}
+.dark-mode .hero-art-top,.dark-mode .hero-art-bottom,.dark-mode .hero-map-note,.dark-mode .hero-art-bottom span{color:#d0d7cf}
+.dark-mode .hero-art:after{border-color:#55645d}
+.dark-mode .hero-foot,.dark-mode .story-step,.dark-mode .winner-section,.dark-mode .office-figure,.dark-mode .office-figures-head .static-legend{border-color:var(--rule)}
+.dark-mode .story-step p:not(.chapter-kicker),.dark-mode .office-figures-head>p:not(.eyebrow):not(.click-note),.dark-mode .section-heading-row>p,.dark-mode .timeline-copy>p:not(.eyebrow),.dark-mode .graph-caption,.dark-mode .chart-caption,.dark-mode .rail-caption,.dark-mode .closing-bridge,.dark-mode .closing-note p,.dark-mode .milestone-intro{color:#ced8d1}
+.dark-mode .story-step strong,.dark-mode .story-step h2,.dark-mode .office-figure h3,.dark-mode .office-figures-head h2,.dark-mode .closing-note h2,.dark-mode .rail-heading h2{color:#f2f3ea}
+.dark-mode .map-scale,.dark-mode .map-legend,.dark-mode .rail-focus,.dark-mode .rail-source,.dark-mode .static-legend span,.dark-mode .timeline-caveat{color:#b8c7bf}
+.dark-mode .linked-year-panel,.dark-mode .milestone-experience,.dark-mode .sticky-year-bar{background:#202d2a;color:#f2f3ea;border-color:#52615a}
+.dark-mode .sticky-year-label,.dark-mode .linked-year-panel h3{color:#f2f3ea}
+.dark-mode .summary-card{background:#2b3a36;border-color:#58665e}
+.dark-mode .summary-card>span,.dark-mode .summary-card p,.dark-mode .linked-year-instruction,.dark-mode .milestone-status{color:#c4d0c7}
+.dark-mode .summary-card strong,.dark-mode .milestone-year,.dark-mode .milestone-office{color:#f2f3ea}
+.dark-mode .year-chip,.dark-mode .milestone-replay,.dark-mode .milestone-compare{color:#f2f3ea;border-color:#7e8f83}
+.dark-mode .year-chip:hover,.dark-mode .milestone-replay:hover{background:#40534a}
+.dark-mode .year-chip[aria-pressed="true"]{background:#d5a64f;color:#13201c;border-color:#d5a64f}
+.dark-mode .milestone-button{color:#f2f3ea}
+.dark-mode .milestone-button.is-current .milestone-year,.dark-mode .milestone-button.is-current .milestone-office{color:#e9b380}
+.dark-mode .milestone-dot{border-color:#202d2a}
+.dark-mode .text-link,.dark-mode .scroll-cue{color:#f2f3ea}
+.dark-mode .legend-gradient{border-color:#89958c}
+.dark-mode .story-rail-empty{color:#bfc9c2}
+@media(max-width:760px){.header-actions{gap:8px}.theme-toggle{font-size:10px;padding:6px 7px}.header-actions .header-explore{font-size:11px}}
+@media(max-width:420px){.header-actions .header-explore{display:none}}
+
+
+/* Floating year buttons - top right */
+
+.sticky-year-bar {
+  position: fixed;
+  top: 78px;
+  right: 20px;
+  left: auto;
+
+  width: auto;
+  max-width: calc(100vw - 40px);
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0;
+
+  padding: 0;
+  margin: 0;
+
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  z-index: 100;
+}
+
+/* Hide redundant heading */
+.sticky-year-label {
+  display: none !important;
+}
+
+/* Only show the buttons */
+.sticky-year-bar .linked-year-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* Compact individual buttons */
+.sticky-year-bar .year-chip {
+  padding: 7px 11px;
+  font-size: 11px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Respect hidden state */
+.sticky-year-bar[hidden],
+.sticky-year-bar .year-chip[hidden] {
+  display: none !important;
+}
+
+/* Tablets */
+@media (max-width: 1100px) {
+  .sticky-year-bar {
+    top: 116px;
+    right: 16px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+  .sticky-year-bar {
+    top: 109px;
+    right: 10px;
+    max-width: calc(100vw - 20px);
+  }
+
+  .sticky-year-bar .year-chip {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+}

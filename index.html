@@ -25,11 +25,24 @@
       <a href="#chapter-geography" data-nav="geography">The Geography</a>
       <a href="#chapter-close" data-nav="close">The Takeaway</a>
     </nav>
-    <a class="header-explore" href="#explore">Explore data <span aria-hidden="true">↘</span></a>
+    <div class="header-actions"><a class="header-explore" href="#explore">Explore data <span aria-hidden="true">↘</span></a><button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">☾ Dark mode</button></div>
   </header>
-  <nav class="mobile-chapters" aria-label="Jump to a story chapter">
+  <nav class="mobile-chapters" aria-label="Jump to a story chapter">  
     <a href="#chapter-baseline" data-nav="baseline">Baseline</a><a href="#chapter-shift" data-nav="shift">The Shift</a><a href="#chapter-offices" data-nav="offices">One Office at a Time</a><a href="#chapter-geography" data-nav="geography">The Geography</a><a href="#chapter-close" data-nav="close">The Takeaway</a>
   </nav>
+
+<!-- Compact year toolbar shown after scrolling past the white box -->
+<div id="sticky-year-bar" class="sticky-year-bar" hidden>
+  <span class="sticky-year-label">Compare Year</span>
+
+  <div class="linked-year-actions">
+    <button class="year-chip" type="button" data-compare-year="1964" aria-pressed="false">1964</button>
+    <button class="year-chip" type="button" data-compare-year="1980" aria-pressed="false">1980</button>
+    <button class="year-chip" type="button" data-compare-year="2002" aria-pressed="false">2002</button>
+    <button class="year-chip" type="button" data-compare-year="2020" aria-pressed="false">2020</button>
+    <button id="sticky-year-clear" class="year-chip year-chip-clear" type="button" hidden>Clear</button>
+  </div>
+</div>
 
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
@@ -45,16 +58,11 @@
         <div id="hero-map" class="map-stage map-stage-hero" role="group" aria-label="Interactive Georgia county map, presidential margin in 1964"></div>
         <div class="hero-map-legend" aria-label="County margin map colors"><span>Republican lead</span><i class="legend-gradient" aria-hidden="true"></i><span>Democratic lead</span></div>
         <div class="hero-art-bottom"><strong>54.1%</strong><span>Goldwater’s share<br>of Georgia’s two-party vote</span><i class="mini-rule"></i><span class="hero-map-note">COUNTY MARGINS<br>1964</span></div>
-        <div class="hero-stamp" aria-hidden="true">THE<br>TURN</div>
       </div>
       <div class="hero-foot"><span>01 / 05</span><span>THE STORY OF A STATE IN MOTION</span><span>GEORGIA, USA</span></div>
     </section>
 
     <section id="story" class="story-shell" aria-label="The guided story">
-      <div class="story-intro">
-        <p class="eyebrow"><span class="eyebrow-rule"></span> The long view</p>
-        <p class="intro-text">A map can show who won. A timeline can show when. Put the two together, and another story appears: Georgia’s political change did not happen all at once, or in every contest at the same time.</p>
-      </div>
 
       <section class="winner-section" aria-labelledby="winner-title">
         <div class="section-heading-row"><div><p class="eyebrow"><span class="eyebrow-rule"></span> The long ballot</p><h2 id="winner-title">Who won every statewide race?</h2></div><p>Each square is one election, colored by the party that took office. Read left to right: Republican red appears first in the presidential row, then moves down the ballot. The shaded band in each row begins at that office’s first Republican win.</p></div>
@@ -65,7 +73,9 @@
 
       <div class="scrolly">
         <aside class="visual-rail" aria-label="Interactive Georgia election map">
-          <div class="rail-heading"><span class="rail-index" id="rail-index">01</span><div><p class="eyebrow">COUNTY VIEW</p><h2 id="rail-title">The Democratic baseline</h2></div></div>
+          <div class="rail-heading"><span id="story-map-year" class="map-year-label">
+  1960
+</span><span class="rail-index" id="rail-index">01</span><div><p class="eyebrow">COUNTY VIEW</p><h2 id="rail-title">The Democratic baseline</h2></div></div>
           <div id="story-map" class="map-stage" role="group" aria-label="Interactive Georgia county presidential margins, 1960"></div>
           <div class="map-legend" id="story-legend">
             <span>Republican lead</span><i class="legend-gradient"></i><span>Democratic lead</span>
